@@ -1,1 +1,7 @@
-auctions: []
+auctions: [{
+  "product_id": "1",
+  "start_price": 1000,
+  "start_at": "2025-11-05T12:58:08.330Z",
+  "end_at": "2025-11-05T12:58:08.330Z",
+  "min_increment": 100
+}]

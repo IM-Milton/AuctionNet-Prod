@@ -1,1 +1,9 @@
-users: []
+users:
+- id: u_1
+  email: alice@example.com
+  password_hash: 
+    scrypt:32768:8:1$l4xBVpaQew3AbXsa$e731f918a80ac26f018c59a62ac44e9955686eea698aa5986bed24837af9646239715c4c34198690672579a2b3bfcde11af6c3b5f46d4d6d31ea5013995b2914
+  balance: 100000.0
+  held: 0.0
+  purchases: []
+  created_at: '2025-11-05T13:04:42.883116+00:00'
