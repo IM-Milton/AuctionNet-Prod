@@ -1,0 +1,260 @@
+from flask import Flask, request, send_from_directory, jsonify, render_template_string
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
+from datetime import datetime, timezone
+from dateutil.parser import isoparse
+from werkzeug.utils import secure_filename
+import os
+from pathlib import Path
+
+from services.repo import YamlRepo, ensure_default_data
+from services.auth import hash_password, check_password, ensure_user_uniqueness
+from services.auctions import (
+    list_auctions, get_auction, create_auction, place_bid,
+    open_auction_if_due, close_auction_if_due, product_is_owned_by
+)
+from models.schemas import RegisterSchema, LoginSchema, ProductSchema, AuctionCreateSchema, BidSchema
+
+ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
+MAX_UPLOAD_MB = 10
+MEDIA_ROOT = "/data/media"
+DOCS_DIR = Path(__file__).parent / "docs"
+
+def create_app():
+    app = Flask(__name__)
+    CORS(app, supports_credentials=False)
+
+    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET", "change_me")
+    app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+    jwt = JWTManager(app)
+
+    repo = YamlRepo()
+    ensure_default_data(repo)
+
+    # --- Scheduler ---
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+
+    def schedule_jobs_for_all():
+        auctions = repo.load("auctions").get("auctions", [])
+        now = datetime.now(timezone.utc)
+        for a in auctions:
+            start_at = isoparse(a["start_at"]).astimezone(timezone.utc)
+            end_at = isoparse(a["end_at"]).astimezone(timezone.utc)
+
+            # open
+            if a["status"] == "scheduled" and start_at > now:
+                scheduler.add_job(lambda aid=a["id"]: open_auction_if_due(repo, aid),
+                                  DateTrigger(run_date=start_at))
+            # close
+            if a["status"] in ("scheduled", "running") and end_at > now:
+                scheduler.add_job(lambda aid=a["id"]: close_auction_if_due(repo, aid),
+                                  DateTrigger(run_date=end_at))
+
+    schedule_jobs_for_all()
+
+    # --- Routes ---
+    @app.get('/api/health')
+    def health():
+        return {"status": "ok"}
+    
+
+    @app.get('/media/<pid>/<path:filename>')
+    def serve_media(pid, filename):
+        # Sert un fichier image stocké sous /data/media/<pid>/<filename>
+        # Ex: GET /media/p_1/20251104T153000Z_photo.jpg
+        dirpath = os.path.join(MEDIA_ROOT, pid)
+        return send_from_directory(directory=dirpath, path=filename, as_attachment=False, max_age=3600)
+
+    # Auth
+    @app.post('/api/auth/register')
+    def register():
+        data = request.get_json() or {}
+        payload = RegisterSchema(**data)
+        users = repo.load("users")
+        ensure_user_uniqueness(users, payload.email)
+        new_id = repo.next_id(users, "users", prefix="u_")
+        users.setdefault("users", []).append({
+            "id": new_id,
+            "email": payload.email,
+            "password_hash": hash_password(payload.password),
+            "balance": 100000.0,
+            "held": 0.0,
+            "purchases": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        repo.save("users", users)
+        return {"id": new_id, "email": payload.email, "balance": 100000.0}, 201
+
+    @app.post('/api/auth/login')
+    def login():
+        data = request.get_json() or {}
+        payload = LoginSchema(**data)
+        users = repo.load("users").get("users", [])
+        user = next((u for u in users if u["email"] == payload.email), None)
+        if not user or not check_password(payload.password, user["password_hash"]):
+            return {"error": "Invalid credentials"}, 401
+        token = create_access_token(identity=user["id"])
+        return {"access_token": token}
+
+    @app.get('/api/me')
+    @jwt_required()
+    def me():
+        uid = get_jwt_identity()
+        users = repo.load("users").get("users", [])
+        user = next(u for u in users if u["id"] == uid)
+        return {
+            "id": user["id"],
+            "email": user["email"],
+            "balance": user.get("balance", 0.0),
+            "held": user.get("held", 0.0),
+            "purchases": user.get("purchases", [])
+        }
+
+    # Categories
+    @app.get('/api/categories')
+    def categories():
+        return repo.load("categories")
+
+    # Products
+    @app.post('/api/products')
+    @jwt_required()
+    def create_product():
+        uid = get_jwt_identity()
+        data = request.get_json() or {}
+        payload = ProductSchema(**data)
+        products = repo.load("products")
+        new_id = repo.next_id(products, "products", prefix="p_")
+        products.setdefault("products", []).append({
+            "id": new_id,
+            "owner_id": uid,
+            "title": payload.title,
+            "description": payload.description,
+            "category": payload.category,
+            "images": payload.images,
+        })
+        repo.save("products", products)
+        return {"id": new_id}, 201
+
+    # ✅ Upload d’image (nouvelle route)
+    @app.post('/api/products/<pid>/images')
+    @jwt_required()
+    def upload_product_image(pid):
+        """Upload d'une image pour le produit `pid`.
+        - form-data: file=<image>
+        - retourne: { "path": "media/<pid>/<filename>" }
+        """
+        uid = get_jwt_identity()
+        products_doc = repo.load("products")
+        prod = next((p for p in products_doc.get("products", []) if p["id"] == pid), None)
+        if not prod:
+            return {"error": "Product not found"}, 404
+        if prod.get("owner_id") != uid:
+            return {"error": "You do not own this product"}, 403
+
+        if 'file' not in request.files:
+            return {"error": "Missing file"}, 400
+        file = request.files['file']
+        if file.filename == '':
+            return {"error": "Empty filename"}, 400
+
+        mime = file.mimetype or ''
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ALLOWED_IMAGE_EXTS or mime not in ALLOWED_IMAGE_MIMES:
+            return {"error": "Unsupported file type"}, 400
+
+        safe_name = secure_filename(file.filename)
+        target_dir = os.path.join('/data', 'media', pid)
+        os.makedirs(target_dir, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        stored_name = f"{ts}_{safe_name}"
+        abs_path = os.path.join(target_dir, stored_name)
+        file.save(abs_path)
+
+        rel_path = f"media/{pid}/{stored_name}"
+        prod.setdefault('images', []).append(rel_path)
+        repo.save('products', products_doc)
+        return {"path": rel_path}, 201
+
+    # Auctions
+    @app.get('/api/auctions')
+    def get_auctions():
+        status = request.args.get('status')
+        category = request.args.get('category')
+        q = request.args.get('search')
+        return list_auctions(repo, status=status, category=category, search=q)
+
+    @app.get('/api/auctions/<aid>')
+    def get_auction_by_id(aid):
+        result = get_auction(repo, aid)
+        if not result:
+            return {"error": "Not found"}, 404
+        return result
+
+    @app.post('/api/auctions')
+    @jwt_required()
+    def post_auction():
+        uid = get_jwt_identity()
+        data = request.get_json() or {}
+        payload = AuctionCreateSchema(**data)
+        if not product_is_owned_by(repo, payload.product_id, uid):
+            return {"error": "You do not own this product"}, 403
+        out = create_auction(repo, payload)
+        schedule_jobs_for_all()
+        return out, 201
+
+    @app.post('/api/auctions/<aid>/bids')
+    @jwt_required()
+    def post_bid(aid):
+        uid = get_jwt_identity()
+        data = request.get_json() or {}
+        payload = BidSchema(**data)
+        try:
+            res = place_bid(repo, aid, uid, payload.amount)
+            return res, 201
+        except ValueError as e:
+            return {"error": str(e)}, 400
+
+    # Purchases
+    @app.get('/api/my/purchases')
+    @jwt_required()
+    def my_purchases():
+        uid = get_jwt_identity()
+        users = repo.load("users").get("users", [])
+        products = repo.load("products").get("products", [])
+        user = next(u for u in users if u["id"] == uid)
+        ids = set(user.get("purchases", []))
+        return {"products": [p for p in products if p["id"] in ids]}
+        DOCS_DIR = Path(__file__).parent / "docs"
+
+    @app.get("/openapi.yaml")
+    def get_openapi():
+        return send_from_directory(DOCS_DIR, "openapi.yaml", mimetype="text/yaml")
+
+    SWAGGER_UI = """
+    <!doctype html><html><head>
+    <meta charset="utf-8"/><title>API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+    </head><body>
+    <div id="swagger"></div>
+    <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+    <script>
+    window.ui = SwaggerUIBundle({ url: '/openapi.yaml', dom_id: '#swagger' });
+    </script>
+    </body></html>
+    """
+
+    @app.get("/docs")
+    def docs():
+        return render_template_string(SWAGGER_UI)
+
+    return app
+
+
+
+if __name__ == '__main__':
+    app = create_app()
+    app.run(host='0.0.0.0', port=5000)
