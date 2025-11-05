@@ -19,6 +19,7 @@ coverage/
 
 # Environment
 .env
+.venv
 .env.*
 !.env.example
 
