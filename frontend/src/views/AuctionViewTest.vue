@@ -9,7 +9,6 @@ onMounted(async () => { auctions.value = await getAllAuctions(); });
 
 <template>
   <div v-for="a in auctions" :key="a.product_id">
-    <img v-if="img(a)" :src="img(a)" style="width:200px" />
     <div>{{ a.product?.title ?? ('Produit ' + a.product_id) }}</div>
     <div>Prix actuel : {{  a.start_price }} €</div>
   </div>
