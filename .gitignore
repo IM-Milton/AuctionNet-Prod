@@ -100,3 +100,10 @@ __pycache__/
 *.pyd
 *.pycache/
 >>>>>>> Stashed changes
+
+# Environnements virtuels Python
+venv/
+.venv/
+env/
+.env/
+
