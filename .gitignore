@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 # Node
 node_modules/
 npm-debug.log*
@@ -49,7 +48,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.pycache/
-=======
 # Node
 node_modules/
 npm-debug.log*
@@ -99,7 +97,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.pycache/
->>>>>>> Stashed changes
 
 # Environnements virtuels Python
 venv/
