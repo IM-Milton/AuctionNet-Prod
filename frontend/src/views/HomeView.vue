@@ -241,9 +241,8 @@ const filteredAuctions = computed(() => {
   return result;
 });
 
-// 🔥 "Enchères actives" = nombre de running dans toutes les enchères
-const activeAuctionsCount = computed(
-  () => auctions.value.filter((a) => a.status === "running").length
+const activeAuctionsCount = computed(() =>
+  filteredAuctions.value.filter((a) => a.status === "running").length
 );
 
 function viewAuction(id: string) {
