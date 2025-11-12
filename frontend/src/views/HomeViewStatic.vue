@@ -9,7 +9,7 @@
         </p>
         <div class="hero-stats">
           <div class="stat">
-            <span class="stat-number">{{ activeAuctionsCount }}</span>
+            <span class="stat-number">1,234</span>
             <span class="stat-label">Enchères actives</span>
           </div>
           <div class="stat">
@@ -30,25 +30,12 @@
         <label>Catégorie :</label>
         <select v-model="selectedCategory">
           <option value="all">Toutes</option>
-          <option
-            v-for="cat in categories"
-            :key="cat"
-            :value="cat"
-          >
-            {{ cat }}
-          </option>
+          <option value="electronics">Électronique</option>
+          <option value="fashion">Mode</option>
+          <option value="sports">Sport</option>
+          <option value="art">Art</option>
         </select>
       </div>
-
-        <div class="filter-group">
-    <label>État :</label>
-    <select v-model="selectedStatus">
-      <option value="all">Tous</option>
-      <option value="scheduled">À venir</option>
-      <option value="running">En cours</option>
-      <option value="closed">Terminées</option>
-    </select>
-  </div>
       
       <div class="filter-group">
         <label>Trier par :</label>
@@ -72,26 +59,17 @@
     <!-- Enchères en vedette -->
     <section class="featured">
       <h2>⭐ Enchères en vedette</h2>
-
-      <div v-if="loading" class="no-results">
-        Chargement des enchères...
+      <div class="auction-grid">
+        <AuctionItem
+          v-for="auction in filteredAuctions"
+          :key="auction.id"
+          :auction="auction"
+          @click="viewAuction(auction.id)"
+        />
       </div>
-      <div v-else-if="error" class="no-results">
-        😕 Une erreur est survenue : {{ error }}
-      </div>
-      <div v-else>
-        <div class="auction-grid">
-          <AuctionItem
-            v-for="auction in filteredAuctions"
-            :key="auction.id"
-            :auction="auction"
-            @click="viewAuction(auction.id)"
-          />
-        </div>
-        
-        <div v-if="filteredAuctions.length === 0" class="no-results">
-          <p>😕 Aucune enchère ne correspond à vos critères</p>
-        </div>
+      
+      <div v-if="filteredAuctions.length === 0" class="no-results">
+        <p>😕 Aucune enchère ne correspond à vos critères</p>
       </div>
     </section>
 
@@ -124,138 +102,110 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+<script setup>
+import { ref, computed } from 'vue'
+import AuctionItem from '../components/AuctionItem.vue'
+import { useRouter } from 'vue-router'
 
-import AuctionItem from "../components/AuctionItem.vue";
-import { getAllAuctions } from "../services/auctionsService";
-import { getCategories } from "../services/categoriesService";
-import type { Auction as ApiAuction } from "../models/auction";
+const router = useRouter()
 
-const router = useRouter();
+const selectedCategory = ref('all')
+const sortBy = ref('recent')
+const searchQuery = ref('')
 
-type StatusFilter = "all" | "scheduled" | "running" | "closed";
-
-const selectedCategory = ref<"all" | string>("all");
-const selectedStatus = ref<StatusFilter>("running"); // 🔥 par défaut : enchères actives
-const sortBy = ref<"recent" | "price-low" | "price-high" | "ending">("recent");
-const searchQuery = ref("");
-
-type UiAuction = {
-  id: string;
-  title: string;
-  price: number;
-  image: string;
-  category: string;
-   startTime: Date | null;
-  endTime: Date | null;
-  bids: number;
-  status: StatusFilter; 
-};
-
-const auctions = ref<UiAuction[]>([]);
-const categories = ref<string[]>([]);
-const loading = ref(false);
-const error = ref<string | null>(null);
-
-function mapAuctionToUi(a: ApiAuction): UiAuction {
-  const p = a.product ?? { title: "Sans titre", category: "autre", images: [] };
-  const images = p.images ?? [];
-
-  return {
-    id: a.id,
-    title: p.title ?? "Sans titre",
-    price: (a as any).current_price ?? a.start_price,
-    image: images[0] ?? "/assets/images/placeholder.jpg",
-    category: p.category ?? "autre",
-    startTime: a.start_at ? new Date(a.start_at) : null,   // 👈 nouveau
-    endTime: a.end_at ? new Date(a.end_at) : null,
-    bids: 0,
-    status: (a as any).status ?? "running",
-  };
-}
-
-async function loadCategories() {
-  try {
-    const cats = await getCategories();
-    categories.value = cats;
-  } catch (e) {
-    console.error(e);
+const auctions = ref([
+  { 
+    id: 1, 
+    title: 'Montre Rolex Submariner', 
+    price: 3500, 
+    image: '/assets/images/rolex.jpg',
+    category: 'fashion',
+    endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    bids: 23
+  },
+  { 
+    id: 2, 
+    title: 'Vélo de course Canyon', 
+    price: 1200, 
+    image: '/assets/images/velo.jpg',
+    category: 'sports',
+    endTime: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+    bids: 15
+  },
+  { 
+    id: 3, 
+    title: 'MacBook Pro 16"', 
+    price: 2100, 
+    image: '/assets/images/macbook.jpg',
+    category: 'electronics',
+    endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    bids: 42
+  },
+  { 
+    id: 4, 
+    title: 'iPhone 15 Pro Max', 
+    price: 950, 
+    image: '/assets/images/iphone.jpg',
+    category: 'electronics',
+    endTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
+    bids: 67
+  },
+  { 
+    id: 5, 
+    title: 'Sac Hermès Birkin', 
+    price: 8500, 
+    image: '/assets/images/hermes.jpg',
+    category: 'fashion',
+    endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    bids: 89
+  },
+  { 
+    id: 6, 
+    title: 'Tableau Abstrait Original', 
+    price: 750, 
+    image: '/assets/images/art.jpg',
+    category: 'art',
+    endTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+    bids: 12
   }
-}
-
-async function loadAuctions() {
-  try {
-    loading.value = true;
-    error.value = null;
-
-    const apiAuctions = await getAllAuctions({
-      // ici on ne filtre pas par status côté backend, on chargera tout
-      // status: "running",
-    });
-
-    auctions.value = apiAuctions.map(mapAuctionToUi);
-  } catch (e: any) {
-    console.error(e);
-    error.value = e.message ?? "Erreur inconnue";
-  } finally {
-    loading.value = false;
-  }
-}
+])
 
 const filteredAuctions = computed(() => {
-  let result = auctions.value;
-
-  // 🔥 filtre par état (scheduled / running / closed / all)
-  if (selectedStatus.value !== "all") {
-    result = result.filter((a) => a.status === selectedStatus.value);
-  }
+  let result = auctions.value
 
   // Filtrer par catégorie
-  if (selectedCategory.value !== "all") {
-    result = result.filter((a) => a.category === selectedCategory.value);
+  if (selectedCategory.value !== 'all') {
+    result = result.filter(a => a.category === selectedCategory.value)
   }
 
   // Filtrer par recherche
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
-    result = result.filter((a) => a.title.toLowerCase().includes(q));
+    result = result.filter(a => 
+      a.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
   }
 
-  // Tri
+  // Trier
   result = [...result].sort((a, b) => {
     switch (sortBy.value) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "ending":
-        if (!a.endTime || !b.endTime) return 0;
-        return a.endTime.getTime() - b.endTime.getTime();
+      case 'price-low':
+        return a.price - b.price
+      case 'price-high':
+        return b.price - a.price
+      case 'ending':
+        return a.endTime - b.endTime
       default:
-        return String(b.id).localeCompare(String(a.id));
+        return b.id - a.id
     }
-  });
+  })
 
-  return result;
-});
+  return result
+})
 
-// 🔥 "Enchères actives" = nombre de running dans toutes les enchères
-const activeAuctionsCount = computed(
-  () => auctions.value.filter((a) => a.status === "running").length
-);
-
-function viewAuction(id: string) {
-  router.push(`/auction/${id}`);
+function viewAuction(id) {
+  router.push(`/auction/${id}`)
 }
-
-onMounted(() => {
-  loadCategories();
-  loadAuctions();
-});
 </script>
-
 
 <style scoped>
 .home {

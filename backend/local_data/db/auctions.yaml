@@ -1,1 +1,18 @@
-auctions: []
+auctions: [{id: a1, product_id: p1, start_price: 5000, min_increment: 50, start_at: '2025-11-13T13:34:57.302Z',
+    end_at: '2025-11-13T13:34:57.302Z', status: running, current_price: 5100, current_bid_id: b_3,
+    product: {id: p1, owner_id: u1, title: Montre Rolex Submariner, description: c'est
+        une montre rolex, category: fashion, images: [/assets/images/rolex.jpg]}},
+  {id: a2, product_id: p2, start_price: 5000, min_increment: 50, start_at: '2025-11-12T13:34:57.302Z',
+    end_at: '2025-11-13T13:34:57.302Z', status: running, current_price: 5100, current_bid_id: b_3,
+    product: {id: p2, owner_id: u1, title: Macbook Pro, description: c'est une montre
+        rolex, category: electronique, images: [/assets/images/rolex.jpg]}}, {id: a_3,
+    product_id: p_4, start_price: 1000.0, start_at: '2025-11-13T15:52:31.583000+00:00',
+    end_at: '2025-11-13T16:52:31.583000+00:00', status: scheduled, current_price: 1000.0,
+    current_bid_id: null, min_increment: 50.0}, {id: a_4, product_id: p_4, start_price: 1000.0,
+    start_at: '2025-11-12T16:04:31.583000+00:00', end_at: '2025-11-12T16:05:31.583000+00:00',
+    status: closed, current_price: 1000.0, current_bid_id: null, min_increment: 50.0},
+  {id: a_5, product_id: p_4, start_price: 1000.0, start_at: '2025-11-12T17:09:31.583000+00:00',
+    end_at: '2025-11-12T17:13:31.583000+00:00', status: running, current_price: 1000.0,
+    current_bid_id: null, min_increment: 50.0}]
+
+

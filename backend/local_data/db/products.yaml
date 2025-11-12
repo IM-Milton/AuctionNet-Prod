@@ -1,1 +1,9 @@
-products: []
+products: [
+  {id: p1, owner_id: u1, title: Montre Rolex Submariner, description: c'est
+      une montre rolex, category: fashion, images: [/assets/images/rolex.jpg]}, 
+      {
+    id: p2, owner_id: u1, title: Macbook Pro, description: c'est une montre rolex,
+    category: electronique, images: [/assets/images/rolex.jpg]}, {id: p_3, owner_id: u_1,
+    title: Montre Rolex, description: Montre en argent, category: autre, images: [
+      assets/rolex.jpg]}, {id: p_4, owner_id: u_1, title: Hermes Bag, description: this
+      is a Hermes bag, category: fashion, images: [string]}]
