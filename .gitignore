@@ -48,3 +48,10 @@ __pycache__/
 *.pyo
 *.pyd
 *.pycache/
+
+# Environnements virtuels Python
+venv/
+.venv/
+env/
+.env/
+
