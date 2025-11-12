@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 Step for ini : 
 1. pip install -r requirements.txt
 2. export DB_DIR="$(pwd)/local_data/db"
@@ -52,3 +53,56 @@ curl -s -X POST "http://localhost:5000/api/auctions/a_1/bids" \
   -H "Authorization: Bearer $ALICE_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"amount":5200}'
+=======
+Step for ini : 
+1. pip install -r requirements.txt
+2. export DB_DIR="$(pwd)/local_data/db"
+3. export JWT_SECRET="dev_change_me"
+4. if on wsl : python3 app.py or python app.py
+
+# Santé
+curl -s http://localhost:5000/api/health
+
+# Register
+curl -s -X POST http://localhost:5000/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@example.com","password":"secret123"}'
+
+# Login → token
+ALICE_TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@example.com","password":"secret123"}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+
+# Créer produit
+PROD_ID=$(curl -s -X POST http://localhost:5000/api/products \
+  -H "Authorization: Bearer $ALICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Peugeot 208","description":"Essence 2019, 65k km","category":"vehicule","images":[]}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+
+# Upload image
+curl -s -X POST "http://localhost:5000/api/products/$PROD_ID/images" \
+  -H "Authorization: Bearer $ALICE_TOKEN" \
+  -F "file=@/chemin/vers/image.jpg;type=image/jpeg"
+
+# Créer enchère
+START=$(date -u -d "+1 minute" +%Y-%m-%dT%H:%M:%SZ)
+END=$(date -u -d "+3 minutes" +%Y-%m-%dT%H:%M:%SZ)
+curl -s -X POST http://localhost:5000/api/auctions \
+  -H "Authorization: Bearer $ALICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "{\"product_id\":\"$PROD_ID\",\"start_price\":5000,\"start_at\":\"$START\",\"end_at\":\"$END\",\"min_increment\":50}"
+
+# Lister enchères
+curl -s "http://localhost:5000/api/auctions?status=running"
+
+# Détail enchère
+curl -s "http://localhost:5000/api/auctions/a_1"
+
+# Placer une mise
+curl -s -X POST "http://localhost:5000/api/auctions/a_1/bids" \
+  -H "Authorization: Bearer $ALICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":5200}'
+>>>>>>> Stashed changes

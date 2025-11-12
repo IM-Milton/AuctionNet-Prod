@@ -4,13 +4,23 @@ import fcntl
 import tempfile
 from typing import Any, Dict
 from ruamel.yaml import YAML
+
+
+BASE = Path(__file__).resolve().parents[1]
+
+# Par défaut: backend/local_data/db
+DEFAULT_DB = BASE / "local_data" / "db"
+
+DB_DIR = Path(os.environ.get("DB_DIR", str(DEFAULT_DB))).resolve()
+DB_DIR.mkdir(parents=True, exist_ok=True)
 yaml = YAML()
-DB_DIR = Path(os.environ.get("DB_DIR", "/data/db"))
+
+
 
 
 class YamlRepo:
     def __init__(self):
-        DB_DIR.mkdir(parents=True, exist_ok=True)
+        self.db_dir = DB_DIR
 
     def _path(self, name: str) -> Path:
         return DB_DIR / f"{name}.yaml"

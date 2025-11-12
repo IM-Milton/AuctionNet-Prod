@@ -19,8 +19,14 @@ from models.schemas import RegisterSchema, LoginSchema, ProductSchema, AuctionCr
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
-MAX_UPLOAD_MB = 10
-MEDIA_ROOT = "/data/media"
+
+MEDIA_ROOT = Path(
+    os.environ.get("MEDIA_ROOT", str((Path(__file__).parent / "local_data" / "media")))
+).resolve()
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", 10))
+
 DOCS_DIR = Path(__file__).parent / "docs"
 
 def create_app():
@@ -167,7 +173,7 @@ def create_app():
             return {"error": "Unsupported file type"}, 400
 
         safe_name = secure_filename(file.filename)
-        target_dir = os.path.join('/data', 'media', pid)
+        target_dir = os.path.join(str(MEDIA_ROOT), pid)
         os.makedirs(target_dir, exist_ok=True)
         ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
         stored_name = f"{ts}_{safe_name}"
