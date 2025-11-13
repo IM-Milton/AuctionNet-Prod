@@ -15,6 +15,9 @@ from services.auctions import (
     list_auctions, get_auction, create_auction, place_bid,
     open_auction_if_due, close_auction_if_due, product_is_owned_by
 )
+from services.products import (
+    list_products, product_is_owned_by
+)
 from models.schemas import RegisterSchema, LoginSchema, ProductSchema, AuctionCreateSchema, BidSchema
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -126,6 +129,13 @@ def create_app():
         return repo.load("categories")
 
     # Products
+    @app.get('/api/products')
+    def get_products():
+        owner_id = request.args.get('owner_id')
+        category = request.args.get('category')
+        q = request.args.get('search')
+        return list_products(repo, owner_id=owner_id, category=category, search=q)
+
     @app.post('/api/products')
     @jwt_required()
     def create_product():
