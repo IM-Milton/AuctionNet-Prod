@@ -76,6 +76,9 @@ coverage/
 .DS_Store
 Thumbs.db
 **/local_data/
+*.zip
+*.tar.gz
+
 
 # IDE / Editor
 .vscode/
