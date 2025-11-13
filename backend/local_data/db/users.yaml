@@ -1,9 +1,0 @@
-users:
-- id: u_1
-  email: user@example.com
-  password_hash: 
-    scrypt:32768:8:1$8D6clcOUXuqkH3nL$0e5dec3774bf8e43cf717e4c811d87f49d781630bd414205d8a22ba7824f0fb453c7680cfd5c84fc404dc59c5bcc387d60cff8ee6c5ccad5d0b4f17bf03b328a
-  balance: 100000.0
-  held: 0.0
-  purchases: []
-  created_at: '2025-11-12T16:28:27.341721+00:00'
