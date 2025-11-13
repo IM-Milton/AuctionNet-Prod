@@ -8,18 +8,60 @@
       
       <nav class="nav">
         <router-link to="/" class="nav-link">
-          <span>🏠</span> Accueil
+          <span>🏠</span> <span class="nav-text">Accueil</span>
         </router-link>
-        <router-link to="/login" class="nav-link">
-          <span>👤</span> Connexion
-        </router-link>
-        <button class="btn-sell">
-          <span>💰</span> Vendre
-        </button>
+        
+        <!-- Si connecté -->
+        <template v-if="currentUser">
+          <router-link to="/profile" class="nav-link">
+            <span>👤</span> <span class="nav-text">{{ currentUser.name }}</span>
+          </router-link>
+          <router-link to="/sell" class="btn-sell">
+            <span>💰</span> <span class="nav-text">Vendre</span>
+          </router-link>
+          <button @click="logout" class="btn-logout">
+            <span>🚪</span> <span class="nav-text">Déconnexion</span>
+          </button>
+        </template>
+        
+        <!-- Si non connecté -->
+        <template v-else>
+          <router-link to="/login" class="btn-login">
+            <span>🔐</span> <span class="nav-text">Connexion</span>
+          </router-link>
+        </template>
       </nav>
     </div>
   </header>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const currentUser = ref(null)
+
+onMounted(() => {
+  loadCurrentUser()
+})
+
+function loadCurrentUser() {
+  const user = localStorage.getItem('currentUser')
+  if (user) {
+    currentUser.value = JSON.parse(user)
+  }
+}
+
+function logout() {
+  if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+    localStorage.removeItem('currentUser')
+    currentUser.value = null
+    router.push('/')
+    window.location.reload()
+  }
+}
+</script>
 
 <style scoped>
 .header {
@@ -115,18 +157,62 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+.btn-login {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
+}
+
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ff5252;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: #e04848;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+}
+
 @media (max-width: 768px) {
   .header-content {
     padding: 1rem;
   }
   
   .nav {
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
   
-  .nav-link span,
-  .btn-sell span {
+  .nav-text {
     display: none;
+  }
+  
+  .nav-link,
+  .btn-sell {
+    padding: 0.5rem 0.75rem;
   }
 }
 </style>
