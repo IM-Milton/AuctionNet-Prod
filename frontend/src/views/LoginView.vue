@@ -6,9 +6,17 @@
         <p>{{ isLogin ? 'Bienvenue sur AuctioNet' : 'Créez votre compte' }}</p>
       </div>
 
+      <!-- Messages d'erreur et succès -->
+      <div v-if="errorMessage" class="alert alert-error">
+        ❌ {{ errorMessage }}
+      </div>
+      <div v-if="successMessage" class="alert alert-success">
+        ✅ {{ successMessage }}
+      </div>
+
       <form @submit.prevent="handleSubmit" class="login-form">
         <div class="form-group" v-if="!isLogin">
-          <label for="name">Nom complet</label>
+          <label for="name">Nom complet *</label>
           <input
             type="text"
             id="name"
@@ -19,7 +27,7 @@
         </div>
 
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Email *</label>
           <input
             type="email"
             id="email"
@@ -30,23 +38,25 @@
         </div>
 
         <div class="form-group">
-          <label for="password">Mot de passe</label>
+          <label for="password">Mot de passe *</label>
           <input
             type="password"
             id="password"
             v-model="form.password"
-            placeholder="••••••••"
+            :placeholder="isLogin ? '••••••••' : 'Min. 6 caractères'"
+            :minlength="isLogin ? 1 : 6"
             required
           />
         </div>
 
         <div class="form-group" v-if="!isLogin">
-          <label for="confirmPassword">Confirmer le mot de passe</label>
+          <label for="confirmPassword">Confirmer le mot de passe *</label>
           <input
             type="password"
             id="confirmPassword"
             v-model="form.confirmPassword"
             placeholder="••••••••"
+            minlength="6"
             required
           />
         </div>
@@ -86,6 +96,8 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isLogin = ref(true)
+const errorMessage = ref('')
+const successMessage = ref('')
 
 const form = ref({
   name: '',
@@ -96,6 +108,8 @@ const form = ref({
 
 function toggleMode() {
   isLogin.value = !isLogin.value
+  errorMessage.value = ''
+  successMessage.value = ''
   form.value = {
     name: '',
     email: '',
@@ -105,24 +119,97 @@ function toggleMode() {
 }
 
 function handleSubmit() {
-  if (!isLogin.value && form.value.password !== form.value.confirmPassword) {
-    alert('Les mots de passe ne correspondent pas !')
-    return
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  // Validation pour l'inscription
+  if (!isLogin.value) {
+    if (form.value.password !== form.value.confirmPassword) {
+      errorMessage.value = 'Les mots de passe ne correspondent pas !'
+      return
+    }
+    
+    if (form.value.password.length < 6) {
+      errorMessage.value = 'Le mot de passe doit contenir au moins 6 caractères'
+      return
+    }
+    
+    if (!form.value.name.trim()) {
+      errorMessage.value = 'Le nom est obligatoire'
+      return
+    }
   }
 
-  const action = isLogin.value ? 'Connexion' : 'Inscription'
-  alert(`${action} réussie pour ${form.value.email} !`)
-  
-  // Rediriger vers l'accueil
-  router.push('/')
+  // Récupérer les utilisateurs existants
+  const users = JSON.parse(localStorage.getItem('users') || '[]')
+
+  if (isLogin.value) {
+    // Connexion
+    const user = users.find(u => u.email === form.value.email && u.password === form.value.password)
+    
+    if (user) {
+      // Sauvegarder la session
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        balance: user.balance,
+        createdAt: user.createdAt
+      }))
+      
+      successMessage.value = `Bienvenue ${user.name} !`
+      
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 800)
+    } else {
+      errorMessage.value = 'Email ou mot de passe incorrect'
+    }
+  } else {
+    // Inscription
+    const existingUser = users.find(u => u.email === form.value.email)
+    
+    if (existingUser) {
+      errorMessage.value = 'Cet email est déjà utilisé'
+      return
+    }
+    
+    // Créer le nouvel utilisateur
+    const newUser = {
+      id: Date.now(),
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+      balance: 1000, // Solde de départ
+      createdAt: new Date().toISOString()
+    }
+    
+    users.push(newUser)
+    localStorage.setItem('users', JSON.stringify(users))
+    
+    // Connexion automatique
+    localStorage.setItem('currentUser', JSON.stringify({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      balance: newUser.balance,
+      createdAt: newUser.createdAt
+    }))
+    
+    successMessage.value = `Compte créé avec succès ! Bienvenue ${newUser.name} !`
+    
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 1000)
+  }
 }
 
 function loginWithGoogle() {
-  alert('Connexion avec Google (à implémenter)')
+  alert('Connexion avec Google - Fonctionnalité à venir')
 }
 
 function loginWithFacebook() {
-  alert('Connexion avec Facebook (à implémenter)')
+  alert('Connexion avec Facebook - Fonctionnalité à venir')
 }
 </script>
 
@@ -274,6 +361,38 @@ function loginWithFacebook() {
   border-color: #667eea;
   background: #f8f9ff;
   transform: translateY(-2px);
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+  animation: slideDown 0.3s ease;
+}
+
+.alert-error {
+  background: #fee;
+  color: #c33;
+  border: 2px solid #fcc;
+}
+
+.alert-success {
+  background: #efe;
+  color: #3a3;
+  border: 2px solid #cfc;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 480px) {

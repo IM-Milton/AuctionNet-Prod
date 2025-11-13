@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import AuctionView from '../views/AuctionView.vue'
 import LoginView from '../views/LoginView.vue'
+import SellView from '../views/SellView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
   { 
@@ -21,6 +23,18 @@ const routes = [
     name: 'login', 
     component: LoginView,
     meta: { title: 'Connexion - AuctioNet' }
+  },
+  { 
+    path: '/sell', 
+    name: 'sell', 
+    component: SellView,
+    meta: { title: 'Créer une enchère - AuctioNet' }
+  },
+  { 
+    path: '/profile', 
+    name: 'profile', 
+    component: ProfileView,
+    meta: { title: 'Mon Profil - AuctioNet' }
   }
 ]
 
