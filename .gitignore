@@ -75,6 +75,7 @@ coverage/
 # System files
 .DS_Store
 Thumbs.db
+local_data/
 
 # IDE / Editor
 .vscode/
@@ -92,7 +93,7 @@ jest-cache/
 jest-coverage/
 
 # Python
-__pycache__/
+*__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
