@@ -12,14 +12,10 @@
             <span class="stat-number">{{ activeAuctionsCount }}</span>
             <span class="stat-label">Enchères actives</span>
           </div>
-          <div class="stat">
+          <!-- <div class="stat">
             <span class="stat-number">15,678</span>
             <span class="stat-label">Membres</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number">98%</span>
-            <span class="stat-label">Satisfaction</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </section>
@@ -41,7 +37,7 @@
       </div>
 
         <div class="filter-group">
-    <label>État :</label>
+    <label>Statut :</label>
     <select v-model="selectedStatus">
       <option value="all">Tous</option>
       <option value="scheduled">À venir</option>
@@ -131,14 +127,15 @@ import { useRouter } from "vue-router";
 import AuctionItem from "../components/AuctionItem.vue";
 import { getAllAuctions } from "../services/auctionsService";
 import { getCategories } from "../services/categoriesService";
-import type { Auction as ApiAuction } from "../models/auction";
+import type { Auction  } from "../models/auction";
+import { toMediaUrl } from "../services/media";
 
 const router = useRouter();
 
 type StatusFilter = "all" | "scheduled" | "running" | "closed";
 
 const selectedCategory = ref<"all" | string>("all");
-const selectedStatus = ref<StatusFilter>("running"); // 🔥 par défaut : enchères actives
+const selectedStatus = ref<StatusFilter>("running"); 
 const sortBy = ref<"recent" | "price-low" | "price-high" | "ending">("recent");
 const searchQuery = ref("");
 
@@ -148,7 +145,7 @@ type UiAuction = {
   price: number;
   image: string;
   category: string;
-   startTime: Date | null;
+  startTime: Date | null;
   endTime: Date | null;
   bids: number;
   status: StatusFilter; 
@@ -159,15 +156,16 @@ const categories = ref<string[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-function mapAuctionToUi(a: ApiAuction): UiAuction {
+function mapAuctionToUi(a: Auction): UiAuction {
   const p = a.product ?? { title: "Sans titre", category: "autre", images: [] };
-  const images = p.images ?? [];
+  const images = p.images[0];
+  console.log(images);
 
   return {
     id: a.id,
     title: p.title ?? "Sans titre",
     price: (a as any).current_price ?? a.start_price,
-    image: images[0] ?? "/assets/images/placeholder.jpg",
+    image: toMediaUrl(images),
     category: p.category ?? "autre",
     startTime: a.start_at ? new Date(a.start_at) : null,   // 👈 nouveau
     endTime: a.end_at ? new Date(a.end_at) : null,
@@ -190,12 +188,12 @@ async function loadAuctions() {
     loading.value = true;
     error.value = null;
 
-    const apiAuctions = await getAllAuctions({
+    const Auctions = await getAllAuctions({
       // ici on ne filtre pas par status côté backend, on chargera tout
       // status: "running",
     });
 
-    auctions.value = apiAuctions.map(mapAuctionToUi);
+    auctions.value = Auctions.map(mapAuctionToUi);
   } catch (e: any) {
     console.error(e);
     error.value = e.message ?? "Erreur inconnue";
@@ -207,7 +205,6 @@ async function loadAuctions() {
 const filteredAuctions = computed(() => {
   let result = auctions.value;
 
-  // 🔥 filtre par état (scheduled / running / closed / all)
   if (selectedStatus.value !== "all") {
     result = result.filter((a) => a.status === selectedStatus.value);
   }
