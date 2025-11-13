@@ -13,9 +13,9 @@
         <router-link to="/login" class="nav-link">
           <span>👤</span> Connexion
         </router-link>
-        <button class="btn-sell">
+        <router-link to="/sell" class="btn-sell">
           <span>💰</span> Vendre
-        </button>
+        </router-link>
       </nav>
     </div>
   </header>

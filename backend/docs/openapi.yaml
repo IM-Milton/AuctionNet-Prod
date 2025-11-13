@@ -30,6 +30,7 @@ components:
         title: { type: string }
         description: { type: string }
         category: { type: string, example: vehicule }
+        condition : { type: string,  enum: [used, new] }
         images:
           type: array
           items: { type: string, example: media/p_1/20250101T120000Z_img.jpg }
@@ -40,8 +41,8 @@ components:
         product_id: { type: string, example: p_1 }
         start_price: { type: number, example: 5000 }
         min_increment: { type: number, example: 50 }
-        start_at: { type: string, format: date-time }
-        end_at: { type: string, format: date-time }
+        start_at: { type: string, format: date-time, example: '2025-11-13T14:01:00+01:00' }
+        end_at:   { type: string, format: date-time, example: '2025-11-13T14:06:00+01:00' }
         status: { type: string, enum: [scheduled, running, closed] }
         current_price: { type: number, example: 5100 }
         current_bid_id: { type: [string, 'null'], example: b_3 }
@@ -146,11 +147,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, description, category]
+              required: [title, description, category, condition]
               properties:
                 title: { type: string }
                 description: { type: string }
                 category: { type: string, example: vehicule }
+                condition: { type: string, enum: [used, new] }
                 images:
                   type: array
                   items: { type: string }
@@ -207,6 +209,9 @@ paths:
           name: category
           schema: { type: string }
         - in: query
+          name: condition
+          schema: { type: string, enum: [used, new] }
+        - in: query
           name: search
           schema: { type: string }
       responses:
@@ -233,8 +238,8 @@ paths:
               properties:
                 product_id: { type: string }
                 start_price: { type: number }
-                start_at: { type: string, format: date-time }
-                end_at: { type: string, format: date-time }
+                start_at: { type: string, format: date-time, example: '2025-11-13T14:01:00+01:00' }
+                end_at:   { type: string, format: date-time, example: '2025-11-13T14:06:00+01:00' }
                 min_increment: { type: number, example: 50 }
       responses:
         '201':

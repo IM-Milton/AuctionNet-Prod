@@ -1,9 +1,9 @@
 users:
 - id: u_1
-  email: mia@example.com
+  email: user@example.com
   password_hash: 
-    scrypt:32768:8:1$5jZCr2Fdjnvc6QiE$d0fbcd0b11096976f176469652c39065eb72a57e1a5a75bdd3bd461328f410b7b383b331e89eae3acb34fb477992359a1c7ed73eb288330e197a9bc8307ef3fd
+    scrypt:32768:8:1$8D6clcOUXuqkH3nL$0e5dec3774bf8e43cf717e4c811d87f49d781630bd414205d8a22ba7824f0fb453c7680cfd5c84fc404dc59c5bcc387d60cff8ee6c5ccad5d0b4f17bf03b328a
   balance: 100000.0
   held: 0.0
   purchases: []
-  created_at: '2025-11-12T13:46:27.594629+00:00'
+  created_at: '2025-11-12T16:28:27.341721+00:00'
