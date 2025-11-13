@@ -98,12 +98,19 @@ const hours = computed(() =>
 const minutes = computed(() =>
   Math.floor((remainingMs.value % (1000 * 60 * 60)) / (1000 * 60))
 );
+const seconds = computed(() =>
+  Math.floor((remainingMs.value % (1000 * 60)) / 1000)
+);
+
+function z(n: number) {
+  return n.toString().padStart(2, "0");
+}
 
 const countdownText = computed(() => {
-  if (remainingMs.value <= 0) return "0 min";
-  if (days.value > 0) return `${days.value}j ${hours.value}h`;
-  if (hours.value > 0) return `${hours.value}h ${minutes.value}m`;
-  return `${minutes.value} min`;
+  if (remainingMs.value <= 0) return "00s";
+  if (days.value > 0)   return `${days.value}j ${hours.value}h ${minutes.value}m ${z(seconds.value)}s`;
+  if (hours.value > 0)  return `${hours.value}h ${minutes.value}m ${z(seconds.value)}s`;
+  return `${minutes.value}m ${z(seconds.value)}s`;
 });
 
 const statusText = computed(() => {

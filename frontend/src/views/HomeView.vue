@@ -167,7 +167,7 @@ function mapAuctionToUi(a: Auction): UiAuction {
     price: (a as any).current_price ?? a.start_price,
     image: toMediaUrl(images),
     category: p.category ?? "autre",
-    startTime: a.start_at ? new Date(a.start_at) : null,   // 👈 nouveau
+    startTime: a.start_at ? new Date(a.start_at) : null,   
     endTime: a.end_at ? new Date(a.end_at) : null,
     bids: 0,
     status: (a as any).status ?? "running",
