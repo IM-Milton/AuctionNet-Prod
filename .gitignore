@@ -75,8 +75,6 @@ coverage/
 # System files
 .DS_Store
 Thumbs.db
-*.yaml
-**/local_data/
 
 # IDE / Editor
 .vscode/
