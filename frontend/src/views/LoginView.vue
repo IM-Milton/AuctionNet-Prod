@@ -61,8 +61,9 @@
           />
         </div>
 
-        <button type="submit" class="btn btn-submit">
-          {{ isLogin ? 'Se connecter' : "S'inscrire" }}
+        <button type="submit" class="btn btn-submit" :disabled="isLoading">
+          <span v-if="isLoading">⏳ Chargement...</span>
+          <span v-else>{{ isLogin ? 'Se connecter' : "S'inscrire" }}</span>
         </button>
       </form>
 
@@ -93,11 +94,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 const isLogin = ref(true)
 const errorMessage = ref('')
 const successMessage = ref('')
+const isLoading = ref(false)
 
 const form = ref({
   name: '',
@@ -118,89 +121,93 @@ function toggleMode() {
   }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   errorMessage.value = ''
   successMessage.value = ''
+  isLoading.value = true
 
-  // Validation pour l'inscription
-  if (!isLogin.value) {
-    if (form.value.password !== form.value.confirmPassword) {
-      errorMessage.value = 'Les mots de passe ne correspondent pas !'
-      return
+  try {
+    // Validation pour l'inscription
+    if (!isLogin.value) {
+      if (form.value.password !== form.value.confirmPassword) {
+        errorMessage.value = 'Les mots de passe ne correspondent pas !'
+        isLoading.value = false
+        return
+      }
+      
+      if (form.value.password.length < 6) {
+        errorMessage.value = 'Le mot de passe doit contenir au moins 6 caractères'
+        isLoading.value = false
+        return
+      }
+      
+      if (!form.value.name.trim()) {
+        errorMessage.value = 'Le nom est obligatoire'
+        isLoading.value = false
+        return
+      }
     }
-    
-    if (form.value.password.length < 6) {
-      errorMessage.value = 'Le mot de passe doit contenir au moins 6 caractères'
-      return
-    }
-    
-    if (!form.value.name.trim()) {
-      errorMessage.value = 'Le nom est obligatoire'
-      return
-    }
-  }
 
-  // Récupérer les utilisateurs existants
-  const users = JSON.parse(localStorage.getItem('users') || '[]')
-
-  if (isLogin.value) {
-    // Connexion
-    const user = users.find(u => u.email === form.value.email && u.password === form.value.password)
-    
-    if (user) {
-      // Sauvegarder la session
+    if (isLogin.value) {
+      // Connexion avec le backend
+      const response = await api.login({
+        email: form.value.email,
+        password: form.value.password
+      })
+      
+      // Récupérer les informations de l'utilisateur
+      const userData = await api.getCurrentUser()
+      
+      // Sauvegarder les infos utilisateur dans localStorage
       localStorage.setItem('currentUser', JSON.stringify({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        balance: user.balance,
-        createdAt: user.createdAt
+        id: userData.id,
+        email: userData.email,
+        balance: userData.balance,
+        held: userData.held,
+        purchases: userData.purchases
       }))
       
-      successMessage.value = `Bienvenue ${user.name} !`
+      successMessage.value = `Bienvenue !`
       
       setTimeout(() => {
         window.location.href = '/'
       }, 800)
     } else {
-      errorMessage.value = 'Email ou mot de passe incorrect'
+      // Inscription avec le backend
+      const response = await api.register({
+        email: form.value.email,
+        password: form.value.password
+      })
+      
+      // Connexion automatique après inscription
+      await api.login({
+        email: form.value.email,
+        password: form.value.password
+      })
+      
+      // Récupérer les informations de l'utilisateur
+      const userData = await api.getCurrentUser()
+      
+      // Sauvegarder les infos utilisateur dans localStorage
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: userData.id,
+        email: userData.email,
+        balance: userData.balance,
+        held: userData.held,
+        purchases: userData.purchases
+      }))
+      
+      successMessage.value = `Compte créé avec succès ! Bienvenue !`
+      
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 1000)
     }
-  } else {
-    // Inscription
-    const existingUser = users.find(u => u.email === form.value.email)
-    
-    if (existingUser) {
-      errorMessage.value = 'Cet email est déjà utilisé'
-      return
-    }
-    
-    // Créer le nouvel utilisateur
-    const newUser = {
-      id: Date.now(),
-      name: form.value.name,
-      email: form.value.email,
-      password: form.value.password,
-      balance: 1000, // Solde de départ
-      createdAt: new Date().toISOString()
-    }
-    
-    users.push(newUser)
-    localStorage.setItem('users', JSON.stringify(users))
-    
-    // Connexion automatique
-    localStorage.setItem('currentUser', JSON.stringify({
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      balance: newUser.balance,
-      createdAt: newUser.createdAt
-    }))
-    
-    successMessage.value = `Compte créé avec succès ! Bienvenue ${newUser.name} !`
-    
-    setTimeout(() => {
-      window.location.href = '/'
-    }, 1000)
+  } catch (error) {
+    console.error('Error:', error)
+    errorMessage.value = error.message || 'Une erreur est survenue. Veuillez réessayer.'
+  } finally {
+    isLoading.value = false
   }
 }
 

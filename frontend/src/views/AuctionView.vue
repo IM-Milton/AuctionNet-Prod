@@ -1,8 +1,22 @@
 <template>
-  <div class="auction-detail" v-if="auction">
-    <button class="btn-back" @click="goBack">
+  <!-- Loading -->
+  <div v-if="loading" class="loading-container">
+    <div class="spinner">⏳</div>
+    <p>Chargement de l'enchère...</p>
+  </div>
+
+  <div class="auction-detail" v-else-if="auction">
+    <button class="btn-back" @click="router.push('/')">
       ← Retour
     </button>
+
+    <!-- Messages -->
+    <div v-if="errorMessage" class="alert alert-error">
+      ❌ {{ errorMessage }}
+    </div>
+    <div v-if="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
 
     <div class="detail-content">
       <div class="image-section">
@@ -16,86 +30,153 @@
 
       <div class="info-section">
         <div class="header">
-          <h1>{{ auction.title }}</h1>
-          <span class="badge badge-success">En cours</span>
+          <h1>{{ auction.product?.title || auction.title }}</h1>
+          <span class="badge" :class="{
+            'badge-success': auction.status === 'running',
+            'badge-warning': auction.status === 'scheduled',
+            'badge-secondary': auction.status === 'closed'
+          }">
+            {{ getStatusLabel(auction.status) }}
+          </span>
         </div>
 
         <div class="price-section">
           <div class="current-price">
             <span class="label">Prix actuel</span>
-            <span class="amount">{{ auction.price }} €</span>
+            <span class="amount">{{ auction.current_price || auction.start_price }} €</span>
           </div>
           <div class="stats">
             <div class="stat-item">
-              <span>👥 {{ auction.bids || 0 }} enchères</span>
+              <span>👥 {{ auction.bids_count || 0 }} enchères</span>
             </div>
             <div class="stat-item">
-              <span>👁️ {{ auction.views || 156 }} vues</span>
+              <span>� Prix de départ: {{ auction.start_price }} €</span>
             </div>
           </div>
         </div>
 
-        <div class="timer-section" v-if="auction.endTime">
+        <div class="timer-section" v-if="auction.status === 'running' && auction.end_at">
           <div class="timer-label">⏰ Temps restant</div>
           <div class="countdown">
             <div class="time-unit">
-              <span class="time-value">{{ days }}</span>
+              <span class="time-value">{{ timeRemaining.days }}</span>
               <span class="time-label">jours</span>
             </div>
             <div class="separator">:</div>
             <div class="time-unit">
-              <span class="time-value">{{ hours }}</span>
+              <span class="time-value">{{ timeRemaining.hours }}</span>
               <span class="time-label">heures</span>
             </div>
             <div class="separator">:</div>
             <div class="time-unit">
-              <span class="time-value">{{ minutes }}</span>
+              <span class="time-value">{{ timeRemaining.minutes }}</span>
               <span class="time-label">minutes</span>
             </div>
             <div class="separator">:</div>
             <div class="time-unit">
-              <span class="time-value">{{ seconds }}</span>
+              <span class="time-value">{{ timeRemaining.seconds }}</span>
               <span class="time-label">secondes</span>
             </div>
           </div>
         </div>
+        
+        <div class="timer-section" v-else-if="auction.status === 'scheduled' && auction.start_at">
+          <div class="timer-label">🕐 Débute dans</div>
+          <div class="countdown">
+            <div class="time-unit">
+              <span class="time-value">{{ timeUntilStart.days }}</span>
+              <span class="time-label">jours</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-unit">
+              <span class="time-value">{{ timeUntilStart.hours }}</span>
+              <span class="time-label">heures</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-unit">
+              <span class="time-value">{{ timeUntilStart.minutes }}</span>
+              <span class="time-label">minutes</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="timer-section closed" v-else-if="auction.status === 'closed'">
+          <div class="timer-label">🏁 Enchère terminée</div>
+          <div v-if="auction.winner_id" class="winner-info">
+            <p>🎉 Gagnant: {{ auction.winner_id }}</p>
+            <p>💰 Prix final: {{ auction.current_price }} €</p>
+          </div>
+        </div>
 
-        <div class="bid-section">
-          <label for="bid-amount">Votre enchère (minimum: {{ auction.price + 1 }} €)</label>
+        <div class="bid-section" v-if="auction.status === 'running'">
+          <label for="bid-amount">
+            Votre enchère (minimum: {{ (auction.current_price || auction.start_price) + auction.min_increment }} €)
+          </label>
           <div class="bid-input-group">
             <input
               type="number"
               id="bid-amount"
               v-model="bidAmount"
-              :min="auction.price + 1"
+              :min="(auction.current_price || auction.start_price) + auction.min_increment"
+              :step="auction.min_increment"
               placeholder="Entrez votre enchère"
+              :disabled="bidLoading || !currentUser"
             />
-            <button class="btn btn-bid" @click="placeBid">
-              💰 Enchérir
+            <button 
+              class="btn btn-bid" 
+              @click="placeBid"
+              :disabled="bidLoading || !currentUser"
+            >
+              <span v-if="bidLoading">⏳</span>
+              <span v-else>💰</span>
+              {{ bidLoading ? 'Enchère en cours...' : 'Enchérir' }}
             </button>
           </div>
           
           <div class="quick-bids">
-            <button @click="quickBid(50)" class="btn-quick">+50 €</button>
-            <button @click="quickBid(100)" class="btn-quick">+100 €</button>
-            <button @click="quickBid(200)" class="btn-quick">+200 €</button>
+            <button @click="quickBid(auction.min_increment)" class="btn-quick">
+              +{{ auction.min_increment }} €
+            </button>
+            <button @click="quickBid(auction.min_increment * 2)" class="btn-quick">
+              +{{ auction.min_increment * 2 }} €
+            </button>
+            <button @click="quickBid(auction.min_increment * 5)" class="btn-quick">
+              +{{ auction.min_increment * 5 }} €
+            </button>
           </div>
+          
+          <p v-if="!currentUser" class="warning-message">
+            ⚠️ Vous devez être <router-link to="/login">connecté</router-link> pour enchérir
+          </p>
+        </div>
+        
+        <div class="bid-section disabled" v-else>
+          <p class="info-message">
+            {{ auction.status === 'scheduled' ? '⏰ L\'enchère n\'a pas encore commencé' : '🏁 L\'enchère est terminée' }}
+          </p>
         </div>
 
         <div class="description-section">
           <h3>📝 Description</h3>
-          <p>{{ auction.description || 'Article en excellent état. Livraison rapide et sécurisée. Garantie satisfait ou remboursé.' }}</p>
+          <p>{{ auction.product?.description || 'Aucune description disponible.' }}</p>
+          
+          <div class="product-details" v-if="auction.product">
+            <h4>Détails du produit</h4>
+            <ul>
+              <li><strong>Catégorie:</strong> {{ auction.product.category }}</li>
+              <li><strong>État:</strong> {{ auction.product.condition === 'new' ? 'Neuf' : 'Occasion' }}</li>
+            </ul>
+          </div>
         </div>
 
-        <div class="seller-section">
-          <h3>👤 Vendeur</h3>
-          <div class="seller-info">
-            <div class="seller-avatar">JD</div>
-            <div class="seller-details">
-              <span class="seller-name">John Doe</span>
-              <span class="seller-rating">⭐ 4.8 (127 avis)</span>
-            </div>
-          </div>
+        <div class="auction-info-section">
+          <h3>ℹ️ Informations sur l'enchère</h3>
+          <ul>
+            <li><strong>ID:</strong> {{ auction.id }}</li>
+            <li><strong>Début:</strong> {{ formatDate(auction.start_at) }}</li>
+            <li><strong>Fin:</strong> {{ formatDate(auction.end_at) }}</li>
+            <li><strong>Incrément minimum:</strong> {{ auction.min_increment }} €</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -134,100 +215,262 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
-const id = route.params.id
+const auctionId = route.params.id
 
-const auctions = {
-  1: { 
-    title: 'Montre Rolex Submariner', 
-    price: 3500, 
-    image: '/assets/images/rolex.jpg',
-    bids: 23,
-    views: 245,
-    endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    description: 'Magnifique montre Rolex Submariner en excellent état. Boîtier en acier inoxydable, bracelet Oyster. Fonctionne parfaitement, révisée récemment.'
-  },
-  2: { 
-    title: 'Vélo de course Canyon', 
-    price: 1200, 
-    image: '/assets/images/velo.jpg',
-    bids: 15,
-    views: 189,
-    endTime: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    description: 'Vélo de course Canyon Aeroad, cadre carbone, groupe Shimano Ultegra. Très peu utilisé, comme neuf.'
-  },
-  3: { 
-    title: 'MacBook Pro 16"', 
-    price: 2100, 
-    image: '/assets/images/macbook.jpg',
-    bids: 42,
-    views: 387,
-    endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    description: 'MacBook Pro 16" 2023, Apple M3 Pro, 18Go RAM, 512Go SSD. État impeccable, avec boîte et accessoires d\'origine.'
+const auction = ref(null)
+const bidAmount = ref(0)
+const now = ref(new Date())
+const loading = ref(true)
+const bidLoading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+const currentUser = ref(null)
+const bidHistory = ref([])
+const similarAuctions = ref([])
+const autoRefreshInterval = ref(null)
+
+// Charger les données de l'enchère
+async function loadAuction() {
+  try {
+    loading.value = true
+    const data = await api.getAuction(auctionId)
+    auction.value = data
+    
+    // Initialiser le montant de l'enchère avec le minimum requis
+    if (data.current_price) {
+      bidAmount.value = data.current_price + (data.min_increment || 50)
+    } else {
+      bidAmount.value = data.start_price + (data.min_increment || 50)
+    }
+    
+    // Charger l'historique des enchères (simulation pour le frontend)
+    loadBidHistory()
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement de l\'enchère:', error)
+    errorMessage.value = 'Impossible de charger l\'enchère'
+  } finally {
+    loading.value = false
   }
 }
 
-const auction = auctions[id]
-const bidAmount = ref(auction ? auction.price + 50 : 0)
-const now = ref(new Date())
+// Charger l'historique des enchères (simulé)
+function loadBidHistory() {
+  if (!auction.value) return
+  
+  // Pour l'instant, on simule l'historique
+  const bidsCount = auction.value.bids_count || 0
+  bidHistory.value = []
+  
+  for (let i = 0; i < Math.min(bidsCount, 10); i++) {
+    bidHistory.value.push({
+      user: `Enchérisseur ${i + 1}`,
+      amount: auction.value.current_price - (i * (auction.value.min_increment || 50)),
+      time: `Il y a ${i * 5 + 2} minutes`
+    })
+  }
+}
 
-const bidHistory = ref([
-  { user: 'Alice M.', amount: auction?.price || 0, time: 'Il y a 2 minutes' },
-  { user: 'Bob D.', amount: (auction?.price || 0) - 50, time: 'Il y a 15 minutes' },
-  { user: 'Charlie R.', amount: (auction?.price || 0) - 100, time: 'Il y a 1 heure' },
-  { user: 'David L.', amount: (auction?.price || 0) - 200, time: 'Il y a 3 heures' }
-])
+// Placer une enchère
+async function placeBid() {
+  if (!currentUser.value) {
+    errorMessage.value = 'Vous devez être connecté pour enchérir'
+    setTimeout(() => router.push('/login'), 2000)
+    return
+  }
+  
+  if (bidAmount.value <= auction.value.current_price) {
+    errorMessage.value = `Votre enchère doit être supérieure à ${auction.value.current_price} €`
+    return
+  }
+  
+  const minRequired = auction.value.current_price + auction.value.min_increment
+  if (bidAmount.value < minRequired) {
+    errorMessage.value = `L'enchère minimum est de ${minRequired} €`
+    return
+  }
+  
+  try {
+    bidLoading.value = true
+    errorMessage.value = ''
+    
+    await api.placeBid(auctionId, bidAmount.value)
+    
+    successMessage.value = `✅ Enchère de ${bidAmount.value} € placée avec succès !`
+    
+    // Recharger les données de l'enchère
+    await loadAuction()
+    
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'enchère:', error)
+    errorMessage.value = error.message || 'Impossible de placer l\'enchère'
+  } finally {
+    bidLoading.value = false
+  }
+}
 
-const similarAuctions = ref([
-  { id: 2, title: 'Vélo de course Canyon', price: 1200, image: '/assets/images/velo.jpg' },
-  { id: 3, title: 'MacBook Pro 16"', price: 2100, image: '/assets/images/macbook.jpg' },
-  { id: 4, title: 'iPhone 15 Pro', price: 950, image: '/assets/images/iphone.jpg' }
-])
+// Enchère rapide
+function quickBid(increment) {
+  const currentPrice = auction.value.current_price || auction.value.start_price
+  bidAmount.value = currentPrice + increment
+}
+
+// Calculer le temps restant
+const timeRemaining = computed(() => {
+  if (!auction.value || !auction.value.end_at) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+  }
+  
+  const endDate = new Date(auction.value.end_at)
+  const diff = endDate - now.value
+  
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+  }
+  
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((diff % (1000 * 60)) / 1000)
+  }
+})
+
+// Calculer le temps avant le début
+const timeUntilStart = computed(() => {
+  if (!auction.value || !auction.value.start_at) {
+    return { days: 0, hours: 0, minutes: 0 }
+  }
+  
+  const startDate = new Date(auction.value.start_at)
+  const diff = startDate - now.value
+  
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0 }
+  }
+  
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  }
+})
+
+// Formater une date
+function formatDate(dateString) {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Obtenir le label du statut
+function getStatusLabel(status) {
+  const labels = {
+    'scheduled': 'Programmée',
+    'running': 'En cours',
+    'closed': 'Terminée'
+  }
+  return labels[status] || status
+}
 
 let interval
 
-onMounted(() => {
+onMounted(async () => {
+  // Charger l'utilisateur connecté
+  const user = localStorage.getItem('currentUser')
+  if (user) {
+    currentUser.value = JSON.parse(user)
+  }
+  
+  // Charger les données de l'enchère
+  await loadAuction()
+  
+  // Mise à jour du compte à rebours chaque seconde
   interval = setInterval(() => {
     now.value = new Date()
   }, 1000)
+  
+  // Auto-refresh toutes les 10 secondes pour avoir les dernières enchères
+  autoRefreshInterval.value = setInterval(async () => {
+    if (!bidLoading.value) {
+      await loadAuction()
+    }
+  }, 10000)
 })
 
 onUnmounted(() => {
   if (interval) clearInterval(interval)
+  if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
 })
-
-const timeLeft = computed(() => {
-  if (!auction?.endTime) return 0
-  return Math.max(0, auction.endTime - now.value)
-})
-
-const days = computed(() => Math.floor(timeLeft.value / (1000 * 60 * 60 * 24)))
-const hours = computed(() => Math.floor((timeLeft.value % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-const minutes = computed(() => Math.floor((timeLeft.value % (1000 * 60 * 60)) / (1000 * 60)))
-const seconds = computed(() => Math.floor((timeLeft.value % (1000 * 60)) / 1000))
-
-function placeBid() {
-  if (bidAmount.value <= auction.price) {
-    alert('Votre enchère doit être supérieure au prix actuel !')
-    return
-  }
-  alert(`✅ Enchère de ${bidAmount.value} € placée avec succès !`)
-  auction.price = bidAmount.value
-  bidAmount.value = auction.price + 50
-}
-
-function quickBid(amount) {
-  bidAmount.value = auction.price + amount
-}
-
-function goBack() {
-  router.push('/')
-}
 </script>
 
 <style scoped>
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+}
+
+.spinner {
+  font-size: 3rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.alert-error {
+  background: #fee;
+  color: #c33;
+  border: 2px solid #fcc;
+}
+
+.alert-success {
+  background: #efe;
+  color: #3a3;
+  border: 2px solid #cfc;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .auction-detail {
   animation: fadeIn 0.5s ease;
 }
@@ -607,6 +850,99 @@ function goBack() {
 .similar-price {
   font-weight: 700;
   color: #667eea;
+}
+
+/* Nouveaux styles */
+.badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-secondary {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.timer-section.closed {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.winner-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #efe;
+  border-radius: 8px;
+}
+
+.winner-info p {
+  margin: 0.5rem 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.bid-section.disabled {
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.warning-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.9rem;
+}
+
+.warning-message a {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.info-message {
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.btn-bid:disabled,
+.bid-input-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.product-details,
+.auction-info-section {
+  margin-top: 1rem;
+}
+
+.product-details h4,
+.auction-info-section h3 {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.product-details ul,
+.auction-info-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.product-details li,
+.auction-info-section li {
+  padding: 0.5rem 0;
+  color: #666;
+  border-bottom: 1px solid #eee;
+}
+
+.product-details li:last-child,
+.auction-info-section li:last-child {
+  border-bottom: none;
 }
 
 @media (max-width: 968px) {

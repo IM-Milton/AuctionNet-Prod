@@ -58,8 +58,14 @@
 
     <!-- Enchères en vedette -->
     <section class="featured">
-      <h2>⭐ Enchères en vedette</h2>
-      <div class="auction-grid">
+      <h2>⭐ Enchères {{ loading ? 'en chargement...' : 'en vedette' }}</h2>
+      
+      <div v-if="loading" class="loading-state">
+        <div class="spinner">⏳</div>
+        <p>Chargement des enchères...</p>
+      </div>
+      
+      <div v-else-if="filteredAuctions.length > 0" class="auction-grid">
         <AuctionItem
           v-for="auction in filteredAuctions"
           :key="auction.id"
@@ -68,7 +74,7 @@
         />
       </div>
       
-      <div v-if="filteredAuctions.length === 0" class="no-results">
+      <div v-else class="no-results">
         <p>😕 Aucune enchère ne correspond à vos critères</p>
       </div>
     </section>
@@ -103,17 +109,48 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AuctionItem from '../components/AuctionItem.vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 
 const selectedCategory = ref('all')
 const sortBy = ref('recent')
 const searchQuery = ref('')
+const auctions = ref([])
+const loading = ref(true)
+const categories = ref([])
 
-const auctions = ref([
+// Charger les enchères depuis le backend
+async function loadAuctions() {
+  try {
+    loading.value = true
+    const filters = {}
+    
+    if (selectedCategory.value !== 'all') {
+      filters.category = selectedCategory.value
+    }
+    
+    const data = await api.getAuctions(filters)
+    
+    // Adapter les données du backend au format attendu par le frontend
+    auctions.value = data.auctions?.map(auction => ({
+      id: auction.id,
+      title: auction.product?.title || 'Sans titre',
+      price: auction.current_price || auction.start_price,
+      image: auction.product?.images?.[0] || '/assets/images/placeholder.jpg',
+      category: auction.product?.category || 'other',
+      endTime: new Date(auction.end_at),
+      bids: auction.bids_count || 0,
+      status: auction.status
+    })) || []
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement des enchères:', error)
+    // Fallback sur des données simulées en cas d'erreur
+    auctions.value = [
   { 
     id: 1, 
     title: 'Montre Rolex Submariner', 
@@ -156,19 +193,40 @@ const auctions = ref([
     price: 8500, 
     image: '/assets/images/hermes.jpg',
     category: 'fashion',
-    endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    bids: 89
-  },
-  { 
-    id: 6, 
-    title: 'Tableau Abstrait Original', 
-    price: 750, 
-    image: '/assets/images/art.jpg',
-    category: 'art',
-    endTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-    bids: 12
+      endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      bids: 89
+    },
+    { 
+      id: 6, 
+      title: 'Tableau Abstrait Original', 
+      price: 750, 
+      image: '/assets/images/art.jpg',
+      category: 'art',
+      endTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      bids: 12
+    }
+    ]
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// Charger les catégories
+async function loadCategories() {
+  try {
+    const data = await api.getCategories()
+    categories.value = data.categories || []
+  } catch (error) {
+    console.error('Erreur lors du chargement des catégories:', error)
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    loadAuctions(),
+    loadCategories()
+  ])
+})
 
 const filteredAuctions = computed(() => {
   let result = auctions.value
@@ -396,5 +454,30 @@ function viewAuction(id) {
   .auction-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Loading state */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.loading-state .spinner {
+  font-size: 3rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #666;
+  font-size: 1.1rem;
 }
 </style>

@@ -10,19 +10,11 @@
         <router-link to="/" class="nav-link">
           <span>🏠</span> <span class="nav-text">Accueil</span>
         </router-link>
-<<<<<<< HEAD
-        <router-link to="/login" class="nav-link">
-          <span>👤</span> Connexion
-        </router-link>
-        <router-link to="/sell" class="btn-sell">
-          <span>💰</span> Vendre
-        </router-link>
-=======
         
         <!-- Si connecté -->
         <template v-if="currentUser">
           <router-link to="/profile" class="nav-link">
-            <span>👤</span> <span class="nav-text">{{ currentUser.name }}</span>
+            <span>👤</span> <span class="nav-text">{{ currentUser.email }}</span>
           </router-link>
           <router-link to="/sell" class="btn-sell">
             <span>💰</span> <span class="nav-text">Vendre</span>
@@ -38,7 +30,6 @@
             <span>🔐</span> <span class="nav-text">Connexion</span>
           </router-link>
         </template>
->>>>>>> 6-features-add-auction
       </nav>
     </div>
   </header>
@@ -47,6 +38,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 const currentUser = ref(null)
@@ -64,7 +56,7 @@ function loadCurrentUser() {
 
 function logout() {
   if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-    localStorage.removeItem('currentUser')
+    api.logout() // Supprime le token et les données utilisateur
     currentUser.value = null
     router.push('/')
     window.location.reload()

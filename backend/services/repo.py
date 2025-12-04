@@ -1,9 +1,16 @@
 from pathlib import Path
 import os
-import fcntl
+import sys
 import tempfile
 from typing import Any, Dict
 from ruamel.yaml import YAML
+
+# fcntl n'est pas disponible sur Windows
+try:
+    import fcntl
+    HAS_FCNTL = True
+except ImportError:
+    HAS_FCNTL = False
 
 
 BASE = Path(__file__).resolve().parents[1]
@@ -31,9 +38,11 @@ class YamlRepo:
         if not p.exists():
             return {}
         with open(p, "r") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
+            if HAS_FCNTL:
+                fcntl.flock(f, fcntl.LOCK_SH)
             data = yaml.load(f) or {}
-            fcntl.flock(f, fcntl.LOCK_UN)
+            if HAS_FCNTL:
+                fcntl.flock(f, fcntl.LOCK_UN)
             return data
 
 
