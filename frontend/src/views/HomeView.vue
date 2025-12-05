@@ -58,7 +58,12 @@
 
     <!-- Enchères en vedette -->
     <section class="featured">
-      <h2>⭐ Enchères {{ loading ? 'en chargement...' : 'en vedette' }}</h2>
+      <div class="section-header">
+        <h2>⭐ Enchères {{ loading ? 'en chargement...' : 'en vedette' }}</h2>
+        <button @click="loadAuctions" class="btn-refresh" :disabled="loading">
+          🔄 Rafraîchir
+        </button>
+      </div>
       
       <div v-if="loading" class="loading-state">
         <div class="spinner">⏳</div>
@@ -109,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AuctionItem from '../components/AuctionItem.vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
@@ -122,6 +127,11 @@ const searchQuery = ref('')
 const auctions = ref([])
 const loading = ref(true)
 const categories = ref([])
+
+// Recharger les enchères quand la catégorie change
+watch(selectedCategory, () => {
+  loadAuctions()
+})
 
 // Charger les enchères depuis le backend
 async function loadAuctions() {
@@ -149,6 +159,7 @@ async function loadAuctions() {
     
   } catch (error) {
     console.error('Erreur lors du chargement des enchères:', error)
+    console.error('Détails:', error.message)
     // Fallback sur des données simulées en cas d'erreur
     auctions.value = [
   { 
@@ -210,6 +221,8 @@ async function loadAuctions() {
     loading.value = false
   }
 }
+
+// Charger les catégories depuis le backend
 
 // Charger les catégories
 async function loadCategories() {
@@ -360,10 +373,41 @@ function viewAuction(id) {
   padding: 0.5rem 1rem;
 }
 
-.featured h2 {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.featured h2 {
+  margin: 0;
   color: white;
   font-size: 2rem;
+}
+
+.btn-refresh {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .auction-grid {

@@ -49,11 +49,23 @@ class YamlRepo:
     def save(self, name: str, data: Dict[str, Any]):
         p = self._path(name)
         p.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile("w", delete=False, dir=p.parent) as tmp:
-            yaml.dump(data, tmp)
-            tmp.flush(); os.fsync(tmp.fileno())
-            tmp_path = tmp.name
-        os.replace(tmp_path, p)
+        
+        # Créer un fichier temporaire dans le même dossier
+        fd, tmp_path = tempfile.mkstemp(dir=p.parent, text=True)
+        try:
+            # Écrire les données YAML dans le fichier temporaire
+            with os.fdopen(fd, 'w') as tmp:
+                yaml.dump(data, tmp)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+            
+            # Remplacer atomiquement le fichier original
+            os.replace(tmp_path, p)
+        except Exception:
+            # En cas d'erreur, supprimer le fichier temporaire
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            raise
 
 
     def next_id(self, root: Dict[str, Any], key: str, prefix: str) -> str:

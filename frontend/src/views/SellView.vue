@@ -6,6 +6,14 @@
     </div>
 
     <div class="form-container">
+      <!-- Messages -->
+      <div v-if="errorMessage" class="alert alert-error">
+        ❌ {{ errorMessage }}
+      </div>
+      <div v-if="successMessage" class="alert alert-success">
+        {{ successMessage }}
+      </div>
+      
       <form @submit.prevent="submitAuction">
         <!-- Informations du produit -->
         <section class="form-section">
@@ -146,11 +154,12 @@
 
         <!-- Actions -->
         <div class="form-actions">
-          <button type="button" @click="$router.push('/')" class="btn btn-secondary">
+          <button type="button" @click="$router.push('/')" class="btn btn-secondary" :disabled="isSubmitting">
             Annuler
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-            🚀 Créer l'enchère
+          <button type="submit" class="btn btn-primary" :disabled="!isFormValid || isSubmitting">
+            <span v-if="isSubmitting">⏳ Création en cours...</span>
+            <span v-else>🚀 Créer l'enchère</span>
           </button>
         </div>
       </form>
@@ -161,8 +170,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
 
 const form = ref({
   title: '',
@@ -216,30 +229,102 @@ const isFormValid = computed(() => {
          auctionDuration.value !== 'Dates invalides'
 })
 
-function submitAuction() {
+async function submitAuction() {
   if (!isFormValid.value) return
 
-  // Simuler la création de l'enchère
-  const auction = {
-    id: Date.now(),
-    ...form.value,
-    currentBid: form.value.startPrice,
-    bidsCount: 0,
-    seller: 'Utilisateur actuel',
-    createdAt: new Date().toISOString()
+  // Vérifier si l'utilisateur est connecté
+  const currentUser = localStorage.getItem('currentUser')
+  const token = localStorage.getItem('authToken')
+  
+  console.log('Current User:', currentUser)
+  console.log('Auth Token:', token)
+  
+  if (!currentUser) {
+    errorMessage.value = 'Vous devez être connecté pour créer une enchère'
+    setTimeout(() => router.push('/login'), 2000)
+    return
+  }
+  
+  if (!token) {
+    errorMessage.value = 'Session expirée. Veuillez vous reconnecter.'
+    setTimeout(() => router.push('/login'), 2000)
+    return
   }
 
-  // Sauvegarder dans localStorage pour simulation
-  const auctions = JSON.parse(localStorage.getItem('userAuctions') || '[]')
-  auctions.push(auction)
-  localStorage.setItem('userAuctions', JSON.stringify(auctions))
-
-  alert('✅ Votre enchère a été créée avec succès !')
-  router.push('/profile')
+  try {
+    isSubmitting.value = true
+    errorMessage.value = ''
+    
+    // Étape 1: Créer le produit
+    const productData = {
+      title: form.value.title,
+      description: form.value.description,
+      category: form.value.category,
+      condition: form.value.condition,
+      images: [form.value.imageUrl]
+    }
+    
+    const product = await api.createProduct(productData)
+    
+    // Étape 2: Créer l'enchère avec le produit
+    const auctionData = {
+      product_id: product.id,
+      start_price: form.value.startPrice,
+      min_increment: form.value.minIncrement,
+      start_at: new Date(form.value.startDate).toISOString(),
+      end_at: new Date(form.value.endDate).toISOString()
+    }
+    
+    await api.createAuction(auctionData)
+    
+    successMessage.value = '✅ Votre enchère a été créée avec succès !'
+    
+    setTimeout(() => {
+      router.push('/')
+    }, 1500)
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'enchère:', error)
+    errorMessage.value = error.message || 'Impossible de créer l\'enchère. Veuillez réessayer.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
 <style scoped>
+/* Alerts */
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.alert-error {
+  background: #fee;
+  color: #c33;
+  border: 2px solid #fcc;
+}
+
+.alert-success {
+  background: #efe;
+  color: #3a3;
+  border: 2px solid #cfc;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .sell-page {
   min-height: 100vh;
   padding: 2rem;

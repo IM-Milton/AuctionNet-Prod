@@ -47,6 +47,7 @@ def create_app():
     CORS(app, supports_credentials=False)
 
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET", "change_me")
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False  # Token ne expire jamais (développement)
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
     jwt = JWTManager(app)
 
