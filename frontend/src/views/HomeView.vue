@@ -126,6 +126,7 @@ import api from '@/services/api'
 const router = useRouter()
 
 const selectedCategory = ref('all')
+const selectedStatus = ref('running')
 const sortBy = ref('recent')
 const searchQuery = ref('')
 const auctions = ref([])
@@ -236,122 +237,52 @@ onMounted(async () => {
     loadCategories()
   ])
 })
-const selectedCategory = ref<"all" | string>("all");
-const selectedStatus = ref<StatusFilter>("running"); 
-const sortBy = ref<"recent" | "price-low" | "price-high" | "ending">("recent");
-const searchQuery = ref("");
 
-type UiAuction = {
-  id: string;
-  title: string;
-  price: number;
-  image: string;
-  category: string;
-  startTime: Date | null;
-  endTime: Date | null;
-  bids: number;
-  status: StatusFilter; 
-};
-
-const auctions = ref<UiAuction[]>([]);
-const categories = ref<string[]>([]);
-const loading = ref(false);
-const error = ref<string | null>(null);
-
-function mapAuctionToUi(a: Auction): UiAuction {
-  const p = a.product ?? { title: "Sans titre", category: "autre", images: [] };
-  const images = p.images[0];
-  console.log(images);
-
-  return {
-    id: a.id,
-    title: p.title ?? "Sans titre",
-    price: (a as any).current_price ?? a.start_price,
-    image: toMediaUrl(images),
-    category: p.category ?? "autre",
-    startTime: a.start_at ? new Date(a.start_at) : null,   
-    endTime: a.end_at ? new Date(a.end_at) : null,
-    bids: 0,
-    status: (a as any).status ?? "running",
-  };
-}
-
-async function loadCategories() {
-  try {
-    const cats = await getCategories();
-    categories.value = cats;
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function loadAuctions() {
-  try {
-    loading.value = true;
-    error.value = null;
-
-    const Auctions = await getAllAuctions({
-      // ici on ne filtre pas par status côté backend, on chargera tout
-      // status: "running",
-    });
-
-    auctions.value = Auctions.map(mapAuctionToUi);
-  } catch (e: any) {
-    console.error(e);
-    error.value = e.message ?? "Erreur inconnue";
-  } finally {
-    loading.value = false;
-  }
-}
-
+// Computed: filtrer et trier les enchères
 const filteredAuctions = computed(() => {
-  let result = auctions.value;
+  let result = auctions.value
 
-  if (selectedStatus.value !== "all") {
-    result = result.filter((a) => a.status === selectedStatus.value);
+  // Filtrer par statut
+  if (selectedStatus.value !== 'all') {
+    result = result.filter(a => a.status === selectedStatus.value)
   }
 
   // Filtrer par catégorie
-  if (selectedCategory.value !== "all") {
-    result = result.filter((a) => a.category === selectedCategory.value);
+  if (selectedCategory.value !== 'all') {
+    result = result.filter(a => a.category === selectedCategory.value)
   }
 
   // Filtrer par recherche
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
-    result = result.filter((a) => a.title.toLowerCase().includes(q));
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(a => a.title.toLowerCase().includes(query))
   }
 
   // Tri
   result = [...result].sort((a, b) => {
     switch (sortBy.value) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "ending":
-        if (!a.endTime || !b.endTime) return 0;
-        return a.endTime.getTime() - b.endTime.getTime();
+      case 'price-low':
+        return a.price - b.price
+      case 'price-high':
+        return b.price - a.price
+      case 'ending':
+        if (!a.endTime || !b.endTime) return 0
+        return a.endTime.getTime() - b.endTime.getTime()
       default:
-        return String(b.id).localeCompare(String(a.id));
+        return b.id - a.id
     }
-  });
+  })
 
-  return result;
-});
+  return result
+})
 
-const activeAuctionsCount = computed(() =>
-  filteredAuctions.value.filter((a) => a.status === "running").length
-);
+const activeAuctionsCount = computed(() => 
+  filteredAuctions.value.filter(a => a.status === 'running').length
+)
 
-function viewAuction(id: string) {
-  router.push(`/auction/${id}`);
+function viewAuction(id) {
+  router.push(`/auction/${id}`)
 }
-
-onMounted(() => {
-  loadCategories();
-  loadAuctions();
-});
 </script>
 
 
