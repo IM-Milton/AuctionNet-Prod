@@ -6,7 +6,7 @@
   </div>
 
   <div class="auction-detail" v-else-if="auction">
-    <button class="btn-back" @click="router.push('/')">
+    <button class="btn-back" @click="goBack">
       ← Retour
     </button>
 
@@ -232,6 +232,7 @@ const currentUser = ref(null)
 const bidHistory = ref([])
 const similarAuctions = ref([])
 const autoRefreshInterval = ref(null)
+const countdownInterval = ref(null)
 
 // Charger les données de l'enchère
 async function loadAuction() {
@@ -387,7 +388,15 @@ function getStatusLabel(status) {
   return labels[status] || status
 }
 
-let interval
+// Fonction pour retourner en arrière
+function goBack() {
+  // Nettoyer les intervals avant de partir
+  if (countdownInterval.value) clearInterval(countdownInterval.value)
+  if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
+  
+  // Retourner à la page d'accueil
+  router.push('/')
+}
 
 onMounted(async () => {
   // Charger l'utilisateur connecté
@@ -400,7 +409,7 @@ onMounted(async () => {
   await loadAuction()
   
   // Mise à jour du compte à rebours chaque seconde
-  interval = setInterval(() => {
+  countdownInterval.value = setInterval(() => {
     now.value = new Date()
   }, 1000)
   
@@ -413,7 +422,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (interval) clearInterval(interval)
+  if (countdownInterval.value) clearInterval(countdownInterval.value)
   if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
 })
 </script>
