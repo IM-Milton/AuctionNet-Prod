@@ -9,17 +9,13 @@
         </p>
         <div class="hero-stats">
           <div class="stat">
-            <span class="stat-number">1,234</span>
+            <span class="stat-number">{{ activeAuctionsCount }}</span>
             <span class="stat-label">Enchères actives</span>
           </div>
-          <div class="stat">
+          <!-- <div class="stat">
             <span class="stat-number">15,678</span>
             <span class="stat-label">Membres</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number">98%</span>
-            <span class="stat-label">Satisfaction</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </section>
@@ -30,12 +26,25 @@
         <label>Catégorie :</label>
         <select v-model="selectedCategory">
           <option value="all">Toutes</option>
-          <option value="electronics">Électronique</option>
-          <option value="fashion">Mode</option>
-          <option value="sports">Sport</option>
-          <option value="art">Art</option>
+          <option
+            v-for="cat in categories"
+            :key="cat"
+            :value="cat"
+          >
+            {{ cat }}
+          </option>
         </select>
       </div>
+
+        <div class="filter-group">
+    <label>Statut :</label>
+    <select v-model="selectedStatus">
+      <option value="all">Tous</option>
+      <option value="scheduled">À venir</option>
+      <option value="running">En cours</option>
+      <option value="closed">Terminées</option>
+    </select>
+  </div>
       
       <div class="filter-group">
         <label>Trier par :</label>
@@ -227,43 +236,124 @@ onMounted(async () => {
     loadCategories()
   ])
 })
+const selectedCategory = ref<"all" | string>("all");
+const selectedStatus = ref<StatusFilter>("running"); 
+const sortBy = ref<"recent" | "price-low" | "price-high" | "ending">("recent");
+const searchQuery = ref("");
+
+type UiAuction = {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  category: string;
+  startTime: Date | null;
+  endTime: Date | null;
+  bids: number;
+  status: StatusFilter; 
+};
+
+const auctions = ref<UiAuction[]>([]);
+const categories = ref<string[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
+function mapAuctionToUi(a: Auction): UiAuction {
+  const p = a.product ?? { title: "Sans titre", category: "autre", images: [] };
+  const images = p.images[0];
+  console.log(images);
+
+  return {
+    id: a.id,
+    title: p.title ?? "Sans titre",
+    price: (a as any).current_price ?? a.start_price,
+    image: toMediaUrl(images),
+    category: p.category ?? "autre",
+    startTime: a.start_at ? new Date(a.start_at) : null,   
+    endTime: a.end_at ? new Date(a.end_at) : null,
+    bids: 0,
+    status: (a as any).status ?? "running",
+  };
+}
+
+async function loadCategories() {
+  try {
+    const cats = await getCategories();
+    categories.value = cats;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadAuctions() {
+  try {
+    loading.value = true;
+    error.value = null;
+
+    const Auctions = await getAllAuctions({
+      // ici on ne filtre pas par status côté backend, on chargera tout
+      // status: "running",
+    });
+
+    auctions.value = Auctions.map(mapAuctionToUi);
+  } catch (e: any) {
+    console.error(e);
+    error.value = e.message ?? "Erreur inconnue";
+  } finally {
+    loading.value = false;
+  }
+}
 
 const filteredAuctions = computed(() => {
-  let result = auctions.value
+  let result = auctions.value;
+
+  if (selectedStatus.value !== "all") {
+    result = result.filter((a) => a.status === selectedStatus.value);
+  }
 
   // Filtrer par catégorie
-  if (selectedCategory.value !== 'all') {
-    result = result.filter(a => a.category === selectedCategory.value)
+  if (selectedCategory.value !== "all") {
+    result = result.filter((a) => a.category === selectedCategory.value);
   }
 
   // Filtrer par recherche
   if (searchQuery.value) {
-    result = result.filter(a => 
-      a.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter((a) => a.title.toLowerCase().includes(q));
   }
 
-  // Trier
+  // Tri
   result = [...result].sort((a, b) => {
     switch (sortBy.value) {
-      case 'price-low':
-        return a.price - b.price
-      case 'price-high':
-        return b.price - a.price
-      case 'ending':
-        return a.endTime - b.endTime
+      case "price-low":
+        return a.price - b.price;
+      case "price-high":
+        return b.price - a.price;
+      case "ending":
+        if (!a.endTime || !b.endTime) return 0;
+        return a.endTime.getTime() - b.endTime.getTime();
       default:
-        return b.id - a.id
+        return String(b.id).localeCompare(String(a.id));
     }
-  })
+  });
 
-  return result
-})
+  return result;
+});
 
-function viewAuction(id) {
-  router.push(`/auction/${id}`)
+const activeAuctionsCount = computed(() =>
+  filteredAuctions.value.filter((a) => a.status === "running").length
+);
+
+function viewAuction(id: string) {
+  router.push(`/auction/${id}`);
 }
+
+onMounted(() => {
+  loadCategories();
+  loadAuctions();
+});
 </script>
+
 
 <style scoped>
 .home {

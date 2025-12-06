@@ -75,18 +75,6 @@
           </a>
         </p>
       </div>
-
-      <div class="social-login">
-        <p class="divider"><span>Ou continuer avec</span></p>
-        <div class="social-buttons">
-          <button class="btn-social" @click="loginWithGoogle">
-            <span>🔍</span> Google
-          </button>
-          <button class="btn-social" @click="loginWithFacebook">
-            <span>📘</span> Facebook
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
