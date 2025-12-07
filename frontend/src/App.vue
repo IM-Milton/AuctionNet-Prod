@@ -2,11 +2,7 @@
   <div id="app">
     <Header />
     <main class="container">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <router-view :key="$route.fullPath" />
     </main>
     <Footer />
   </div>

@@ -232,10 +232,16 @@ async function loadCategories() {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadAuctions(),
-    loadCategories()
-  ])
+  console.log('🏠 HomeView: Mounted')
+  try {
+    await Promise.all([
+      loadAuctions(),
+      loadCategories()
+    ])
+    console.log('✅ HomeView: Data loaded successfully')
+  } catch (error) {
+    console.error('❌ HomeView: Error loading data:', error)
+  }
 })
 
 // Computed: filtrer et trier les enchères

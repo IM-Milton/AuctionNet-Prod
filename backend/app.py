@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, request, send_from_directory, jsonify, render_template_string
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.date import DateTrigger
@@ -44,11 +45,14 @@ def to_utc(dt):
 # ------------------- Factory -------------------
 def create_app():
     app = Flask(__name__)
-    CORS(app, supports_credentials=False)
+    CORS(app, supports_credentials=False, resources={r"/*": {"origins": "*"}})
 
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET", "change_me")
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
     jwt = JWTManager(app)
+    
+    # Initialiser SocketIO
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
     repo = YamlRepo()
     ensure_default_data(repo)
@@ -306,6 +310,16 @@ def create_app():
         payload = BidSchema(**data)
         try:
             res = place_bid(repo, aid, uid, payload.amount)
+            
+            # Émettre l'événement WebSocket pour tous les clients dans cette enchère
+            auction_data = get_auction(repo, aid)
+            socketio.emit('bid_placed', {
+                'auction_id': aid,
+                'current_price': res['current_price'],
+                'bid_id': res['bid_id'],
+                'auction': auction_data
+            }, room=f'auction_{aid}')
+            
             return res, 201
         except ValueError as e:
             return {"error": str(e)}, 400
@@ -341,7 +355,32 @@ def create_app():
     def docs():
         return render_template_string(SWAGGER_UI)
 
-    return app
+    # ------------------- WebSocket Events -------------------
+    @socketio.on('connect')
+    def handle_connect():
+        print(f'Client connected: {request.sid}')
+        emit('connected', {'message': 'Connected to auction server'})
+
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        print(f'Client disconnected: {request.sid}')
+
+    @socketio.on('join_auction')
+    def handle_join_auction(data):
+        auction_id = data.get('auction_id')
+        if auction_id:
+            join_room(f'auction_{auction_id}')
+            print(f'Client {request.sid} joined auction {auction_id}')
+            emit('joined_auction', {'auction_id': auction_id})
+
+    @socketio.on('leave_auction')
+    def handle_leave_auction(data):
+        auction_id = data.get('auction_id')
+        if auction_id:
+            leave_room(f'auction_{auction_id}')
+            print(f'Client {request.sid} left auction {auction_id}')
+
+    return app, socketio
 
 # ------------------- Entrypoint -------------------
 if __name__ == '__main__':
@@ -349,5 +388,5 @@ if __name__ == '__main__':
     (Path(__file__).parent / "local_data" / "db").mkdir(parents=True, exist_ok=True)
     (Path(__file__).parent / "local_data" / "media").mkdir(parents=True, exist_ok=True)
 
-    app = create_app()
-    app.run(host='0.0.0.0', port=5000)
+    app, socketio = create_app()
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

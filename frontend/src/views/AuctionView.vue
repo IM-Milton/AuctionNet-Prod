@@ -6,9 +6,9 @@
   </div>
 
   <div class="auction-detail" v-else-if="auction">
-    <button class="btn-back" @click="goBack">
+    <router-link to="/" class="btn-back">
       ← Retour
-    </button>
+    </router-link>
 
     <!-- Messages -->
     <div v-if="errorMessage" class="alert alert-error">
@@ -213,9 +213,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
+import websocketService from '@/services/websocket'
 
 const route = useRoute()
 const router = useRouter()
@@ -233,12 +234,20 @@ const bidHistory = ref([])
 const similarAuctions = ref([])
 const autoRefreshInterval = ref(null)
 const countdownInterval = ref(null)
+const isMounted = ref(false)
 
 // Charger les données de l'enchère
 async function loadAuction() {
+  // Ne rien faire si le composant n'est plus monté
+  if (!isMounted.value) return
+  
   try {
     loading.value = true
     const data = await api.getAuction(auctionId)
+    
+    // Vérifier à nouveau si le composant est toujours monté
+    if (!isMounted.value) return
+    
     auction.value = data
     
     // Initialiser le montant de l'enchère avec le minimum requis
@@ -303,11 +312,13 @@ async function placeBid() {
     
     successMessage.value = `✅ Enchère de ${bidAmount.value} € placée avec succès !`
     
-    // Recharger les données de l'enchère
-    await loadAuction()
+    // Le WebSocket mettra à jour automatiquement les données
+    // Pas besoin de recharger manuellement
     
     setTimeout(() => {
-      successMessage.value = ''
+      if (isMounted.value) {
+        successMessage.value = ''
+      }
     }, 3000)
     
   } catch (error) {
@@ -388,17 +399,9 @@ function getStatusLabel(status) {
   return labels[status] || status
 }
 
-// Fonction pour retourner en arrière
-function goBack() {
-  // Nettoyer les intervals avant de partir
-  if (countdownInterval.value) clearInterval(countdownInterval.value)
-  if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
-  
-  // Retourner à la page d'accueil
-  router.push('/')
-}
-
 onMounted(async () => {
+  isMounted.value = true
+  
   // Charger l'utilisateur connecté
   const user = localStorage.getItem('currentUser')
   if (user) {
@@ -410,20 +413,91 @@ onMounted(async () => {
   
   // Mise à jour du compte à rebours chaque seconde
   countdownInterval.value = setInterval(() => {
-    now.value = new Date()
+    if (isMounted.value) {
+      now.value = new Date()
+    }
   }, 1000)
   
-  // Auto-refresh toutes les 10 secondes pour avoir les dernières enchères
-  autoRefreshInterval.value = setInterval(async () => {
-    if (!bidLoading.value) {
-      await loadAuction()
-    }
-  }, 10000)
+  // Connecter WebSocket et rejoindre la room de l'enchère
+  try {
+    websocketService.connect()
+    await websocketService.joinAuction(auctionId)
+    
+    // Écouter les nouvelles enchères en temps réel
+    websocketService.onBidPlaced((data) => {
+      if (!isMounted.value) return
+      
+      console.log('🔥 Nouvelle enchère reçue en temps réel:', data)
+      
+      // Mettre à jour l'enchère avec les nouvelles données
+      if (data.auction && data.auction_id === auctionId) {
+        auction.value = data.auction
+        
+        // Mettre à jour le montant minimum pour la prochaine enchère
+        bidAmount.value = data.auction.current_price + (data.auction.min_increment || 50)
+        
+        // Afficher une notification
+        successMessage.value = `💰 Nouvelle enchère: ${data.current_price} €`
+        setTimeout(() => {
+          if (isMounted.value) {
+            successMessage.value = ''
+          }
+        }, 3000)
+      }
+    })
+    
+    console.log('✅ WebSocket connecté et room rejointe')
+  } catch (error) {
+    console.error('Erreur WebSocket:', error)
+    // En cas d'erreur, fallback sur le polling
+    autoRefreshInterval.value = setInterval(async () => {
+      if (isMounted.value && !bidLoading.value) {
+        await loadAuction()
+      }
+    }, 5000)
+  }
+})
+
+onBeforeUnmount(() => {
+  console.log('🧹 AuctionView: Cleanup before unmount')
+  
+  // Marquer le composant comme démonté AVANT de nettoyer
+  isMounted.value = false
+  
+  // Quitter la room WebSocket et arrêter d'écouter les événements
+  try {
+    websocketService.leaveAuction(auctionId)
+    websocketService.offBidPlaced()
+    console.log('✅ WebSocket cleanup done')
+  } catch (error) {
+    console.error('⚠️ Error during WebSocket cleanup:', error)
+  }
+  
+  // Nettoyer les intervals
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+    countdownInterval.value = null
+    console.log('✅ Countdown interval cleared')
+  }
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+    autoRefreshInterval.value = null
+    console.log('✅ Auto-refresh interval cleared')
+  }
+  
+  console.log('✅ AuctionView cleanup complete')
 })
 
 onUnmounted(() => {
-  if (countdownInterval.value) clearInterval(countdownInterval.value)
-  if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
+  // Double sécurité pour nettoyer les intervals
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+    countdownInterval.value = null
+  }
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+    autoRefreshInterval.value = null
+  }
 })
 </script>
 
@@ -497,6 +571,8 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: #333;
 }
 
 .btn-back:hover {
