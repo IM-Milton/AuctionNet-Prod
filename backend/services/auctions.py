@@ -75,12 +75,17 @@ def list_auctions(repo, status: Optional[str] = None,
 
 def get_auction(repo, auction_id: str):
     auctions = repo.load("auctions").get("auctions", [])
+    bids = repo.load("bids").get("bids", [])
     products = repo.load("products").get("products", [])
     prod_map = {p["id"]: p for p in products}
     a = next((x for x in auctions if x["id"] == auction_id), None)
     if not a:
         return None
-    return {**a, "product": prod_map.get(a["product_id"])}
+    
+    # Compter le nombre d'enchères (bids) pour cette enchère
+    bids_count = len([b for b in bids if b["auction_id"] == auction_id])
+    
+    return {**a, "product": prod_map.get(a["product_id"]), "bids_count": bids_count}
 
 
 def create_auction(repo, payload):

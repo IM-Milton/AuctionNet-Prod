@@ -149,8 +149,8 @@
           <button type="button" @click="$router.push('/')" class="btn btn-secondary">
             Annuler
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-            🚀 Créer l'enchère
+          <button type="submit" class="btn btn-primary" :disabled="!isFormValid || isSubmitting">
+            {{ isSubmitting ? '⏳ Création...' : '🚀 Créer l\'enchère' }}
           </button>
         </div>
       </form>
@@ -161,6 +161,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 
@@ -216,26 +217,51 @@ const isFormValid = computed(() => {
          auctionDuration.value !== 'Dates invalides'
 })
 
-function submitAuction() {
-  if (!isFormValid.value) return
+const isSubmitting = ref(false)
+const errorMessage = ref('')
 
-  // Simuler la création de l'enchère
-  const auction = {
-    id: Date.now(),
-    ...form.value,
-    currentBid: form.value.startPrice,
-    bidsCount: 0,
-    seller: 'Utilisateur actuel',
-    createdAt: new Date().toISOString()
+async function submitAuction() {
+  if (!isFormValid.value || isSubmitting.value) return
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    // Étape 1: Créer le produit
+    const productData = {
+      title: form.value.title,
+      description: form.value.description,
+      category: form.value.category,
+      condition: form.value.condition,
+      images: [form.value.imageUrl]
+    }
+
+    console.log('📦 Création produit:', productData)
+    const productResponse = await api.createProduct(productData)
+    console.log('✅ Produit créé:', productResponse)
+
+    // Étape 2: Créer l'enchère avec le product_id
+    const auctionData = {
+      product_id: productResponse.id,
+      start_price: form.value.startPrice,
+      min_increment: form.value.minIncrement,
+      start_at: new Date(form.value.startDate).toISOString(),
+      end_at: new Date(form.value.endDate).toISOString()
+    }
+
+    console.log('📤 Création enchère:', auctionData)
+    const auctionResponse = await api.createAuction(auctionData)
+    console.log('✅ Enchère créée:', auctionResponse)
+
+    alert('✅ Votre enchère a été créée avec succès !')
+    router.push('/')
+  } catch (error) {
+    console.error('❌ Erreur création enchère:', error)
+    errorMessage.value = error.message || 'Erreur lors de la création de l\'enchère'
+    alert('❌ ' + errorMessage.value)
+  } finally {
+    isSubmitting.value = false
   }
-
-  // Sauvegarder dans localStorage pour simulation
-  const auctions = JSON.parse(localStorage.getItem('userAuctions') || '[]')
-  auctions.push(auction)
-  localStorage.setItem('userAuctions', JSON.stringify(auctions))
-
-  alert('✅ Votre enchère a été créée avec succès !')
-  router.push('/profile')
 }
 </script>
 

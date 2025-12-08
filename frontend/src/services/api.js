@@ -37,12 +37,26 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
-      const data = await response.json()
-
+      
+      // Gérer les erreurs HTTP
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Une erreur est survenue')
+        let errorMessage = 'Une erreur est survenue'
+        
+        try {
+          const data = await response.json()
+          errorMessage = data.error || data.message || data.msg || errorMessage
+        } catch (e) {
+          // Si pas de JSON, utiliser le status text
+          errorMessage = response.statusText || errorMessage
+        }
+        
+        // Ajouter le code HTTP dans le message pour le débogage
+        const error = new Error(errorMessage)
+        error.status = response.status
+        throw error
       }
 
+      const data = await response.json()
       return data
     } catch (error) {
       console.error('API Error:', error)
@@ -99,7 +113,7 @@ class ApiService {
   }
 
   async placeBid(auctionId, amount) {
-    return await this.request(`/auctions/${auctionId}/bid`, {
+    return await this.request(`/auctions/${auctionId}/bids`, {
       method: 'POST',
       body: JSON.stringify({ amount }),
     })

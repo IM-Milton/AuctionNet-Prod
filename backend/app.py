@@ -302,6 +302,36 @@ def create_app():
 
 
 
+    @app.get('/api/auctions/<aid>/bids')
+    def get_auction_bids(aid):
+        """Récupère l'historique de toutes les enchères pour une enchère spécifique"""
+        bids_doc = repo.load("bids")
+        users_doc = repo.load("users")
+        
+        bids = bids_doc.get("bids", [])
+        users = users_doc.get("users", [])
+        user_map = {u["id"]: u for u in users}
+        
+        # Filtrer les bids pour cette enchère et ajouter les infos utilisateur
+        auction_bids = []
+        for b in bids:
+            if b["auction_id"] == aid:
+                user = user_map.get(b["user_id"], {})
+                auction_bids.append({
+                    "id": b["id"],
+                    "amount": b["amount"],
+                    "timestamp": b["timestamp"],
+                    "user": {
+                        "id": user.get("id"),
+                        "username": user.get("username", "Inconnu")
+                    }
+                })
+        
+        # Trier par timestamp décroissant (plus récent en premier)
+        auction_bids.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return {"bids": auction_bids}
+
     @app.post('/api/auctions/<aid>/bids')
     @jwt_required()
     def post_bid(aid):

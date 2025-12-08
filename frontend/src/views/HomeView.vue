@@ -118,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import AuctionItem from '../components/AuctionItem.vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
@@ -242,6 +242,12 @@ onMounted(async () => {
   } catch (error) {
     console.error('❌ HomeView: Error loading data:', error)
   }
+})
+
+// Recharger les enchères quand on revient sur la page
+onActivated(async () => {
+  console.log('🔄 HomeView: Activated - Rechargement des enchères')
+  await loadAuctions()
 })
 
 // Computed: filtrer et trier les enchères
