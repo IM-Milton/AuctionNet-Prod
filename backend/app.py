@@ -51,11 +51,11 @@ def create_app():
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
     jwt = JWTManager(app)
     
-    # Initialiser SocketIO avec gevent
+    # Initialiser SocketIO avec threading (compatible Python 3.13)
     socketio = SocketIO(
         app, 
         cors_allowed_origins="*", 
-        async_mode='gevent',
+        async_mode='threading',
         logger=True,
         engineio_logger=True
     )
