@@ -1,10 +1,17 @@
 // Service API pour communiquer avec le backend
-// Service API pour communiquer avec le backend
-const isDev = import.meta.env.DEV
 
-const API_BASE_URL = isDev
-  ? 'http://localhost:5000/api'      // dev
-  : import.meta.env.VITE_API_URL     // prod
+const isProd = import.meta.env.PROD
+
+// ⚠️ Remplace ICI par l'URL publique de TON backend Railway
+const PROD_API_BASE_URL = 'https://auctionnet-backend.up.railway.app/api'
+
+// En dev → localhost, en prod → backend Railway
+const API_BASE_URL = isProd
+  ? PROD_API_BASE_URL          // prod : backend Railway
+  : 'http://localhost:5000/api' // dev local
+
+console.log('API_BASE_URL =', API_BASE_URL)
+
 
 class ApiService {
   constructor() {
