@@ -1,0 +1,22 @@
+cf: https://pythonexamples.org/python-flask-and-websocket-example/
+
+fichiers:
+- backend/socket_app.py
+- backend/templates/index.html
+
+Step for ini : 
+1. source .venv/bin/activate
+2. pip install flask flask-socketio
+3. if on wsl : python3 socket_app.py or python socket_app.py
+
+# Activate virtual env
+source .venv/bin/activate  
+
+# Test
+1. go to http://localhost:5000 on two browsers
+2. open Inspect Element > Console on both
+3. type and submit text in one browser to see it printed in all browsers' consoles
+
+test avec app.py à la place:
+1. python3 app.py
+2. go to http://localhost:5000/socket-test
