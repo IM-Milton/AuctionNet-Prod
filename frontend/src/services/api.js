@@ -3,11 +3,8 @@
 const isDev = import.meta.env.DEV
 
 const API_BASE_URL = isDev
-  ? 'http://localhost:5000/api'                    // dev local
-  : import.meta.env.VITE_API_URL                   // prod → DOIT être défini
-
-console.log('API_BASE_URL =', API_BASE_URL) // temporaire pour vérifier en prod
-
+  ? 'http://localhost:5000/api'      // dev
+  : import.meta.env.VITE_API_URL     // prod
 
 class ApiService {
   constructor() {
