@@ -1,16 +1,33 @@
 from pathlib import Path
 import os
-import fcntl
+import sys
 import tempfile
 from typing import Any, Dict
 from ruamel.yaml import YAML
+
+# fcntl n'est pas disponible sur Windows
+try:
+    import fcntl
+    HAS_FCNTL = True
+except ImportError:
+    HAS_FCNTL = False
+
+
+BASE = Path(__file__).resolve().parents[1]
+
+# Par défaut: backend/local_data/db
+DEFAULT_DB = BASE / "local_data" / "db"
+
+DB_DIR = Path(os.environ.get("DB_DIR", str(DEFAULT_DB))).resolve()
+DB_DIR.mkdir(parents=True, exist_ok=True)
 yaml = YAML()
-DB_DIR = Path(os.environ.get("DB_DIR", "/data/db"))
+
+
 
 
 class YamlRepo:
     def __init__(self):
-        DB_DIR.mkdir(parents=True, exist_ok=True)
+        self.db_dir = DB_DIR
 
     def _path(self, name: str) -> Path:
         return DB_DIR / f"{name}.yaml"
@@ -21,9 +38,11 @@ class YamlRepo:
         if not p.exists():
             return {}
         with open(p, "r") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
+            if HAS_FCNTL:
+                fcntl.flock(f, fcntl.LOCK_SH)
             data = yaml.load(f) or {}
-            fcntl.flock(f, fcntl.LOCK_UN)
+            if HAS_FCNTL:
+                fcntl.flock(f, fcntl.LOCK_UN)
             return data
 
 

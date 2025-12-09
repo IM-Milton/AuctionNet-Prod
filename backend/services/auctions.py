@@ -20,10 +20,37 @@ def product_is_owned_by(repo, product_id: str, user_id: str) -> bool:
     p = next((x for x in products if x["id"] == product_id), None)
     return bool(p and p.get("owner_id") == user_id)
 
-def list_auctions(repo, status: Optional[str] = None, category: Optional[str] = None, search: Optional[str] = None):
+def list_auctions(repo, status: Optional[str] = None,
+                  category: Optional[str] = None,
+                  search: Optional[str] = None,
+                  condition: Optional[str] = None):
     auctions, bids, users, products = _load_all(repo)
-    auctions = auctions.get("auctions", [])
-    products_map = {p["id"]: p for p in products.get("products", [])}
+    auctions_list = auctions.get("auctions", [])
+    products_list = products.get("products", [])
+    prod_map = {p["id"]: p for p in products_list}
+
+    out: List[Dict[str, Any]] = []
+    for a in auctions_list:
+        p = prod_map.get(a["product_id"])
+        if not p:
+            continue
+
+        # Filtres (optionnels)
+        if status and a.get("status") != status:
+            continue
+        if category and p.get("category") != category:
+            continue
+        if condition and p.get("condition") != condition:
+            continue
+        if search:
+            s = search.lower()
+            if s not in p.get("title", "").lower() and s not in p.get("description", "").lower():
+                continue
+
+        # ⚠️ NE PAS convertir les dates ici
+        out.append({**a, "product": p})
+
+    return {"auctions": out}
 
 
     def match(a):
@@ -48,17 +75,39 @@ def list_auctions(repo, status: Optional[str] = None, category: Optional[str] = 
 
 def get_auction(repo, auction_id: str):
     auctions = repo.load("auctions").get("auctions", [])
+    bids = repo.load("bids").get("bids", [])
     products = repo.load("products").get("products", [])
     prod_map = {p["id"]: p for p in products}
     a = next((x for x in auctions if x["id"] == auction_id), None)
     if not a:
         return None
-    return {**a, "product": prod_map.get(a["product_id"])}
+    
+    # Compter le nombre d'enchères (bids) pour cette enchère
+    bids_count = len([b for b in bids if b["auction_id"] == auction_id])
+    
+    return {**a, "product": prod_map.get(a["product_id"]), "bids_count": bids_count}
+
 
 def create_auction(repo, payload):
-    auctions_doc = repo.load("auctions")
-    products_doc = repo.load("products")
-    prod = next(p for p in products_doc.get("products", []) if p["id"] == payload.product_id)
+    doc = repo.load("auctions")
+    items = doc.get("auctions", [])
+    new_id = repo.next_id(doc, "auctions", prefix="a_")
+
+    items.append({
+        "id": new_id,
+        "product_id": payload.product_id,
+        "start_price": float(payload.start_price),
+        "min_increment": float(getattr(payload, "min_increment", 50)),
+        "start_at": payload.start_at,   
+        "end_at": payload.end_at,
+        "status": "scheduled",
+        "current_price": float(payload.start_price),
+        "current_bid_id": None,
+    })
+
+    repo.save("auctions", {"auctions": items})
+    return get_auction(repo, new_id)
+
 
     start_at = isoparse(payload.start_at)
     end_at = isoparse(payload.end_at)
