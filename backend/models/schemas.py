@@ -18,7 +18,7 @@ class ProductSchema(BaseModel):
     description: str
     category: str
     images: List[str] = [] # paths relative to /data/media or external URLs
-    condition: Literal["new", "used"]
+    condition: Literal["new","used","like-new","excellent","good","fair" ]
 
 class AuctionCreateSchema(BaseModel):
     product_id: str

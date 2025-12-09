@@ -30,7 +30,7 @@ components:
         title: { type: string }
         description: { type: string }
         category: { type: string, example: vehicule }
-        condition : { type: string,  enum: [used, new] }
+        condition : { type: string,  enum: [new,used,like-new,excellent,good,fair] }
         images:
           type: array
           items: { type: string, example: media/p_1/20250101T120000Z_img.jpg }
@@ -152,7 +152,7 @@ paths:
                 title: { type: string }
                 description: { type: string }
                 category: { type: string, example: vehicule }
-                condition: { type: string, enum: [used, new] }
+                condition: { type: string, enum: [new,used,like-new,excellent,good,fair] }
                 images:
                   type: array
                   items: { type: string }
@@ -210,7 +210,7 @@ paths:
           schema: { type: string }
         - in: query
           name: condition
-          schema: { type: string, enum: [used, new] }
+          schema: { type: string, enum: [new,used,like-new,excellent,good,fair] }
         - in: query
           name: search
           schema: { type: string }

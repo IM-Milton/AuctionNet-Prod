@@ -176,15 +176,6 @@
           </div>
         </div>
 
-        <div class="auction-info-section">
-          <h3>ℹ️ Informations sur l'enchère</h3>
-          <ul>
-            <li><strong>ID:</strong> {{ auction.id }}</li>
-            <li><strong>Début:</strong> {{ formatDate(auction.start_at) }}</li>
-            <li><strong>Fin:</strong> {{ formatDate(auction.end_at) }}</li>
-            <li><strong>Incrément minimum:</strong> {{ auction.min_increment }} €</li>
-          </ul>
-        </div>
       </div>
     </div>
 
@@ -882,6 +873,34 @@ onMounted(async () => {
   countdownInterval.value = setInterval(() => {
     if (isMounted.value) {
       now.value = new Date()
+      
+      if (auction.value) {
+        const currentTime = new Date().getTime()
+        
+        // Vérifier si une enchère "à venir" doit démarrer
+        if (auction.value.status === 'scheduled' && auction.value.start_at) {
+          const startTime = new Date(auction.value.start_at).getTime()
+          
+          if (currentTime >= startTime) {
+            console.log('🚀 Enchère démarrée! Mise à jour du statut: scheduled -> running')
+            auction.value.status = 'running'
+            // Recharger depuis le backend pour synchroniser
+            loadAuction()
+          }
+        }
+        
+        // Vérifier si une enchère "en cours" est expirée
+        if (auction.value.status === 'running' && auction.value.end_at) {
+          const endTime = new Date(auction.value.end_at).getTime()
+          
+          if (currentTime >= endTime) {
+            console.log('⏰ Enchère expirée! Mise à jour du statut: running -> closed')
+            auction.value.status = 'closed'
+            // Recharger depuis le backend pour synchroniser
+            loadAuction()
+          }
+        }
+      }
     }
   }, 1000)
   

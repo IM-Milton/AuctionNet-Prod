@@ -118,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, onMounted, onActivated, onBeforeUnmount } from 'vue'
 import AuctionItem from '../components/AuctionItem.vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
@@ -132,6 +132,7 @@ const searchQuery = ref('')
 const auctions = ref([])
 const loading = ref(true)
 const categories = ref([])
+let expirationCheckInterval = null
 
 // Charger les enchères depuis le backend
 async function loadAuctions() {
@@ -239,6 +240,7 @@ onMounted(async () => {
       loadCategories()
     ])
     console.log('✅ HomeView: Data loaded successfully')
+    startExpirationCheck()
   } catch (error) {
     console.error('❌ HomeView: Error loading data:', error)
   }
@@ -248,6 +250,68 @@ onMounted(async () => {
 onActivated(async () => {
   console.log('🔄 HomeView: Activated - Rechargement des enchères')
   await loadAuctions()
+  startExpirationCheck()
+})
+
+// Vérifier les changements de statut des enchères toutes les secondes
+function checkExpiredAuctions() {
+  const now = new Date().getTime()
+  let hasChanged = false
+  
+  auctions.value = auctions.value.map(auction => {
+    // Vérifier si une enchère "à venir" doit démarrer
+    if (auction.status === 'scheduled' && auction.endTime) {
+      // Calculer startTime à partir de endTime et de la durée (on suppose 4 jours)
+      const endTime = new Date(auction.endTime).getTime()
+      const startTime = endTime - (4 * 24 * 60 * 60 * 1000) // 4 jours avant
+      
+      if (now >= startTime && now < endTime) {
+        console.log(`🚀 Enchère ${auction.id} démarrée, statut: scheduled -> running`)
+        hasChanged = true
+        return { ...auction, status: 'running' }
+      }
+    }
+    
+    // Vérifier si une enchère "en cours" est expirée
+    if (auction.status === 'running' && auction.endTime) {
+      const endTime = new Date(auction.endTime).getTime()
+      if (now >= endTime) {
+        console.log(`⏰ Enchère ${auction.id} expirée, statut: running -> closed`)
+        hasChanged = true
+        return { ...auction, status: 'closed' }
+      }
+    }
+    
+    return auction
+  })
+  
+  // Si des enchères ont changé de statut, recharger depuis le backend pour sync
+  if (hasChanged) {
+    console.log('🔄 Rechargement des enchères suite à changement de statut')
+    loadAuctions()
+  }
+}
+
+function startExpirationCheck() {
+  // Nettoyer l'ancien intervalle s'il existe
+  if (expirationCheckInterval) {
+    clearInterval(expirationCheckInterval)
+  }
+  // Vérifier toutes les secondes
+  expirationCheckInterval = setInterval(checkExpiredAuctions, 1000)
+  console.log('✅ Vérification d\'expiration démarrée')
+}
+
+function stopExpirationCheck() {
+  if (expirationCheckInterval) {
+    clearInterval(expirationCheckInterval)
+    expirationCheckInterval = null
+    console.log('🛑 Vérification d\'expiration arrêtée')
+  }
+}
+
+onBeforeUnmount(() => {
+  stopExpirationCheck()
 })
 
 // Computed: filtrer et trier les enchères

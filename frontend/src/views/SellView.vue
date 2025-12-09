@@ -37,15 +37,15 @@
           <div class="form-row">
             <div class="form-group">
               <label for="category">Catégorie *</label>
-              <select id="category" v-model="form.category" required>
-                <option value="">Sélectionner une catégorie</option>
-                <option value="electronics">📱 Électronique</option>
-                <option value="fashion">👗 Mode</option>
-                <option value="home">🏠 Maison</option>
-                <option value="sports">⚽ Sport</option>
-                <option value="art">🎨 Art</option>
-                <option value="vehicles">🚗 Véhicules</option>
-                <option value="other">📦 Autre</option>
+              <select id="category" v-model="form.category" required :disabled="categoriesLoading">
+                <option value="">{{ categoriesLoading ? 'Chargement...' : 'Sélectionner une catégorie' }}</option>
+                <option 
+                  v-for="cat in categories" 
+                  :key="cat" 
+                  :value="cat"
+                >
+                  {{ getCategoryLabel(cat) }}
+                </option>
               </select>
             </div>
 
@@ -159,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 
@@ -178,6 +178,40 @@ const form = ref({
 })
 
 const imageError = ref(false)
+const categories = ref([])
+const categoriesLoading = ref(true)
+
+// Charger les catégories depuis le backend
+async function loadCategories() {
+  try {
+    categoriesLoading.value = true
+    const data = await api.getCategories()
+    categories.value = data.categories || []
+    console.log('✅ Catégories chargées:', categories.value)
+  } catch (error) {
+    console.error('❌ Erreur chargement catégories:', error)
+    // Fallback sur des catégories par défaut
+    categories.value = ['electronique', 'vehicule', 'immobilier', 'art', 'autre']
+  } finally {
+    categoriesLoading.value = false
+  }
+}
+
+// Obtenir le label d'affichage pour une catégorie
+function getCategoryLabel(category) {
+  const labels = {
+    'electronique': '📱 Électronique',
+    'vehicule': '🚗 Véhicules',
+    'immobilier': '🏠 Immobilier',
+    'art': '🎨 Art',
+    'autre': '📦 Autre'
+  }
+  return labels[category] || category
+}
+
+onMounted(() => {
+  loadCategories()
+})
 
 // Date minimum (maintenant + 1 heure)
 const minStartDate = computed(() => {
