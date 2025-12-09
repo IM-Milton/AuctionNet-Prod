@@ -51,8 +51,14 @@ def create_app():
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
     jwt = JWTManager(app)
     
-    # Initialiser SocketIO
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+    # Initialiser SocketIO avec gevent
+    socketio = SocketIO(
+        app, 
+        cors_allowed_origins="*", 
+        async_mode='gevent',
+        logger=True,
+        engineio_logger=True
+    )
 
     repo = YamlRepo()
     ensure_default_data(repo)
@@ -343,12 +349,20 @@ def create_app():
             
             # Émettre l'événement WebSocket pour tous les clients dans cette enchère
             auction_data = get_auction(repo, aid)
+            room_name = f'auction_{aid}'
+            
+            print('\n' + '='*60)
+            print(f'📢 WEBSOCKET: Émission bid_placed vers la room: {room_name}')
+            print(f'💰 Prix actuel: {res["current_price"]} €')
+            print(f'🆔 Enchère ID: {aid}')
+            print('='*60 + '\n')
+            
             socketio.emit('bid_placed', {
                 'auction_id': aid,
                 'current_price': res['current_price'],
                 'bid_id': res['bid_id'],
                 'auction': auction_data
-            }, room=f'auction_{aid}')
+            }, room=room_name)
             
             return res, 201
         except ValueError as e:
@@ -388,27 +402,37 @@ def create_app():
     # ------------------- WebSocket Events -------------------
     @socketio.on('connect')
     def handle_connect():
-        print(f'Client connected: {request.sid}')
+        print('\n' + '='*60)
+        print(f'✅ WEBSOCKET: Client connecté - SID: {request.sid}')
+        print('='*60 + '\n')
         emit('connected', {'message': 'Connected to auction server'})
 
     @socketio.on('disconnect')
     def handle_disconnect():
-        print(f'Client disconnected: {request.sid}')
+        print('\n' + '='*60)
+        print(f'❌ WEBSOCKET: Client déconnecté - SID: {request.sid}')
+        print('='*60 + '\n')
 
     @socketio.on('join_auction')
     def handle_join_auction(data):
         auction_id = data.get('auction_id')
         if auction_id:
-            join_room(f'auction_{auction_id}')
-            print(f'Client {request.sid} joined auction {auction_id}')
+            room_name = f'auction_{auction_id}'
+            join_room(room_name)
+            print('\n' + '='*60)
+            print(f'🛋️ WEBSOCKET: Client {request.sid} a rejoint la room: {room_name}')
+            print('='*60 + '\n')
             emit('joined_auction', {'auction_id': auction_id})
 
     @socketio.on('leave_auction')
     def handle_leave_auction(data):
         auction_id = data.get('auction_id')
         if auction_id:
-            leave_room(f'auction_{auction_id}')
-            print(f'Client {request.sid} left auction {auction_id}')
+            room_name = f'auction_{auction_id}'
+            leave_room(room_name)
+            print('\n' + '='*60)
+            print(f'🚪 WEBSOCKET: Client {request.sid} a quitté la room: {room_name}')
+            print('='*60 + '\n')
 
     return app, socketio
 

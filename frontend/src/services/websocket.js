@@ -11,31 +11,64 @@ class WebSocketService {
 
   connect() {
     if (this.socket && this.connected) {
-      console.log('WebSocket already connected')
+      console.log('⚠️ WebSocket déjà connecté')
       return this.socket
     }
 
-    console.log('Connecting to WebSocket:', SOCKET_URL)
+    console.log('\n' + '='.repeat(60))
+    console.log('🔌 TENTATIVE DE CONNEXION WEBSOCKET')
+    console.log('URL:', SOCKET_URL)
+    console.log('Transports:', ['websocket', 'polling'])
+    console.log('='.repeat(60) + '\n')
     
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 5,
+      timeout: 10000
     })
 
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', this.socket.id)
+      console.log('\n' + '='.repeat(60))
+      console.log('✅ WEBSOCKET CONNECTÉ AVEC SUCCÈS!')
+      console.log('Socket ID:', this.socket.id)
+      console.log('Transport:', this.socket.io.engine.transport.name)
+      console.log('='.repeat(60) + '\n')
       this.connected = true
     })
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ WebSocket disconnected:', reason)
+      console.log('\n' + '='.repeat(60))
+      console.log('❌ WEBSOCKET DÉCONNECTÉ')
+      console.log('Raison:', reason)
+      console.log('='.repeat(60) + '\n')
       this.connected = false
     })
 
     this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error)
+      console.error('\n' + '='.repeat(60))
+      console.error('❌ ERREUR DE CONNEXION WEBSOCKET')
+      console.error('Message:', error.message)
+      console.error('Type:', error.type)
+      console.error('Description:', error.description)
+      console.error('URL tentée:', SOCKET_URL)
+      console.error('='.repeat(60) + '\n')
+    })
+    
+    this.socket.on('connect_timeout', () => {
+      console.error('\n' + '='.repeat(60))
+      console.error('⏰ TIMEOUT DE CONNEXION WEBSOCKET')
+      console.error('Le serveur ne répond pas')
+      console.error('='.repeat(60) + '\n')
+    })
+    
+    this.socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔄 Tentative de reconnexion #${attemptNumber}...`)
+    })
+    
+    this.socket.on('reconnect_failed', () => {
+      console.error('❌ Toutes les tentatives de reconnexion ont échoué')
     })
 
     this.socket.on('connected', (data) => {

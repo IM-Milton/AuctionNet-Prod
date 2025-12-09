@@ -108,5 +108,3 @@ venv/
 .venv/
 env/
 .env/
-
-**/requirements.txt
