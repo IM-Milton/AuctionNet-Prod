@@ -6,9 +6,17 @@
   </div>
 
   <div class="auction-detail" v-else-if="auction">
-    <router-link to="/" class="btn-back">
-      ← Retour
-    </router-link>
+    <div class="header-controls">
+      <router-link to="/" class="btn-back">
+        ← Retour
+      </router-link>
+      
+      <!-- Indicateur WebSocket -->
+      <div class="ws-indicator" :class="{ 'ws-connected': wsConnected, 'ws-disconnected': !wsConnected }">
+        <span class="ws-dot"></span>
+        <span class="ws-text">{{ wsStatus }}</span>
+      </div>
+    </div>
 
     <!-- Messages -->
     <div v-if="errorMessage" class="alert alert-error">
@@ -248,11 +256,33 @@
             🏆 Classement des enchérisseurs
             <span class="live-indicator">🔴 EN DIRECT</span>
           </h2>
+          
+          <!-- Statistiques globales du leaderboard -->
+          <div class="leaderboard-stats" v-if="leaderboard.length > 0">
+            <div class="leader-stat-item">
+              <span class="stat-number">{{ leaderboard.length }}</span>
+              <span class="stat-text">Participants</span>
+            </div>
+            <div class="leader-stat-item">
+              <span class="stat-number">{{ totalBidsInLeaderboard }}</span>
+              <span class="stat-text">Enchères totales</span>
+            </div>
+            <div class="leader-stat-item">
+              <span class="stat-number">{{ highestBidDifference }} €</span>
+              <span class="stat-text">Écart avec 2ème</span>
+            </div>
+          </div>
+
           <div class="leaderboard" v-if="leaderboard.length > 0">
             <div class="leaderboard-item" 
               v-for="(leader, index) in leaderboard" 
               :key="leader.userId"
-              :class="{ 'top-1': index === 0, 'top-2': index === 1, 'top-3': index === 2 }">
+              :class="{ 
+                'top-1': index === 0, 
+                'top-2': index === 1, 
+                'top-3': index === 2,
+                'current-user': isCurrentUser(leader.userId)
+              }">
               
               <div class="rank">
                 <span v-if="index === 0" class="medal">🥇</span>
@@ -261,30 +291,51 @@
                 <span v-else class="rank-number">#{{ index + 1 }}</span>
               </div>
               
-              <div class="leader-avatar">
+              <div class="leader-avatar" :class="{ 'avatar-glow': index === 0 }">
                 {{ leader.username[0].toUpperCase() }}
               </div>
               
               <div class="leader-info">
                 <div class="leader-name">
                   {{ leader.username }}
+                  <span v-if="isCurrentUser(leader.userId)" class="you-badge">Vous</span>
                   <span v-if="index === 0 && auction?.status === 'running'" class="winning-badge">🎯 En tête</span>
+                  <span v-if="leader.bidCount >= 5" class="active-badge" title="Enchérisseur actif">🔥</span>
                 </div>
                 <div class="leader-stats">
-                  <span class="bid-count">{{ leader.bidCount }} enchère{{ leader.bidCount > 1 ? 's' : '' }}</span>
+                  <span class="bid-count" :title="`${leader.bidCount} enchère(s) placée(s)`">
+                    💰 {{ leader.bidCount }} enchère{{ leader.bidCount > 1 ? 's' : '' }}
+                  </span>
                   <span class="separator">•</span>
-                  <span class="last-bid-time">{{ formatTimestamp(leader.lastBidTime) }}</span>
+                  <span class="last-bid-time" :title="formatFullDate(leader.lastBidTime)">
+                    ⏰ {{ formatTimestamp(leader.lastBidTime) }}
+                  </span>
+                </div>
+                <!-- Progression par rapport au prix de départ -->
+                <div class="leader-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: calculateProgress(leader.currentBid) + '%' }"></div>
+                  </div>
+                  <span class="progress-text">+{{ calculateIncrease(leader.currentBid) }}% depuis le début</span>
                 </div>
               </div>
               
               <div class="leader-badge">
                 <div class="highest-bid">{{ leader.currentBid }} €</div>
-                <div class="badge-label">{{ index === 0 ? 'En tête' : 'Enchère' }}</div>
+                <div class="badge-label">{{ index === 0 ? 'En tête' : 'Enchère actuelle' }}</div>
+                <!-- Afficher l'écart avec le leader -->
+                <div v-if="index > 0" class="bid-difference">
+                  -{{ leaderboard[0].currentBid - leader.currentBid }} €
+                </div>
               </div>
             </div>
           </div>
           <div v-else class="no-data">
-            <p>Aucun enchérisseur pour le moment</p>
+            <div class="empty-leaderboard">
+              <div class="empty-icon">🏆</div>
+              <p>Aucun enchérisseur pour le moment</p>
+              <span class="empty-hint">Soyez le premier à placer une enchère !</span>
+            </div>
           </div>
         </div>
       </div>
@@ -402,6 +453,8 @@ const autoRefreshInterval = ref(null)
 const countdownInterval = ref(null)
 const isMounted = ref(false)
 const priceChartRef = ref(null)
+const wsConnected = ref(false)
+const wsStatus = ref('Déconnecté')
 
 // Computed: Leaderboard des enchérisseurs (EN TEMPS RÉEL)
 const leaderboard = computed(() => {
@@ -445,6 +498,47 @@ const leaderboard = computed(() => {
   console.log('🏆 Leaderboard mis à jour:', sorted)
   return sorted
 })
+
+// Computed: Total des enchères dans le leaderboard
+const totalBidsInLeaderboard = computed(() => {
+  return leaderboard.value.reduce((sum, leader) => sum + leader.bidCount, 0)
+})
+
+// Computed: Différence entre le 1er et le 2ème
+const highestBidDifference = computed(() => {
+  if (leaderboard.value.length < 2) return 0
+  return leaderboard.value[0].currentBid - leaderboard.value[1].currentBid
+})
+
+// Fonctions helper pour le leaderboard
+function isCurrentUser(userId) {
+  return currentUser.value && currentUser.value.id === userId
+}
+
+function calculateProgress(currentBid) {
+  if (!auction.value) return 0
+  const startPrice = auction.value.start_price
+  const maxBid = leaderboard.value.length > 0 ? leaderboard.value[0].currentBid : currentBid
+  if (maxBid === startPrice) return 100
+  return Math.min(((currentBid - startPrice) / (maxBid - startPrice)) * 100, 100)
+}
+
+function calculateIncrease(currentBid) {
+  if (!auction.value || !auction.value.start_price) return 0
+  return Math.round(((currentBid - auction.value.start_price) / auction.value.start_price) * 100)
+}
+
+function formatFullDate(timestamp) {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return date.toLocaleString('fr-FR', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric',
+    hour: '2-digit', 
+    minute: '2-digit'
+  })
+}
 
 // Computed: Points du graphique de prix (EN TEMPS RÉEL)
 const priceChartPoints = computed(() => {
@@ -793,14 +887,51 @@ onMounted(async () => {
   
   // Connecter WebSocket et rejoindre la room de l'enchère
   try {
-    websocketService.connect()
+    console.log('\n' + '='.repeat(60))
+    console.log('🔌 DÉMARRAGE DE LA CONNEXION WEBSOCKET')
+    console.log('='.repeat(60) + '\n')
+    wsStatus.value = 'Connexion...'
+    
+    const socket = websocketService.connect()
+    
+    // Écouter les événements de connexion
+    socket.on('connect', () => {
+      console.log('\n' + '='.repeat(60))
+      console.log('✅ WEBSOCKET CONNECTÉ AVEC SUCCÈS!')
+      console.log(`🆔 Socket ID: ${socket.id}`)
+      console.log('='.repeat(60) + '\n')
+      wsConnected.value = true
+      wsStatus.value = 'Connecté ✓'
+    })
+    
+    socket.on('disconnect', (reason) => {
+      console.log('\n' + '='.repeat(60))
+      console.log('❌ WEBSOCKET DÉCONNECTÉ')
+      console.log(`Raison: ${reason}`)
+      console.log('='.repeat(60) + '\n')
+      wsConnected.value = false
+      wsStatus.value = 'Déconnecté'
+    })
+    
     await websocketService.joinAuction(auctionId)
+    console.log('\n' + '='.repeat(60))
+    console.log(`🛋️ REJOINT LA ROOM: auction_${auctionId}`)
+    console.log('='.repeat(60) + '\n')
     
     // Écouter les nouvelles enchères en temps réel
     websocketService.onBidPlaced((data) => {
       if (!isMounted.value) return
       
-      console.log('🔥 Nouvelle enchère reçue en temps réel:', data)
+      console.log('\n' + '='.repeat(60))
+      console.log('🔥 NOUVELLE ENCHÈRE REÇUE EN TEMPS RÉEL!')
+      console.log('='.repeat(60))
+      console.log('📊 Données:', {
+        auction_id: data.auction_id,
+        current_price: data.auction?.current_price + ' €',
+        bids_count: data.auction?.bids_count,
+        timestamp: new Date().toLocaleTimeString('fr-FR')
+      })
+      console.log('='.repeat(60) + '\n')
       
       // Mettre à jour l'enchère avec les nouvelles données
       if (data.auction && data.auction_id === auctionId) {
@@ -810,10 +941,11 @@ onMounted(async () => {
         bidAmount.value = data.auction.current_price + (data.auction.min_increment || 50)
         
         // Recharger l'historique des enchères pour afficher la nouvelle enchère
+        console.log('🔄 Rechargement de l\'historique des enchères...')
         loadBidHistory()
         
         // Afficher une notification
-        successMessage.value = `💰 Nouvelle enchère: ${data.current_price} €`
+        successMessage.value = `💰 Nouvelle enchère: ${data.auction.current_price} €`
         setTimeout(() => {
           if (isMounted.value) {
             successMessage.value = ''
@@ -822,10 +954,20 @@ onMounted(async () => {
       }
     })
     
-    console.log('✅ WebSocket connecté et room rejointe')
+    console.log('\n' + '='.repeat(60))
+    console.log('✅ WEBSOCKET CONFIGURÉ ET PRÊT')
+    console.log('📡 En attente des mises à jour en temps réel...')
+    console.log('='.repeat(60) + '\n')
   } catch (error) {
-    console.error('Erreur WebSocket:', error)
+    console.error('\n' + '='.repeat(60))
+    console.error('❌ ERREUR WEBSOCKET')
+    console.error('='.repeat(60))
+    console.error(error)
+    console.error('='.repeat(60) + '\n')
+    wsConnected.value = false
+    wsStatus.value = 'Erreur'
     // En cas d'erreur, fallback sur le polling
+    console.log('⚠️ Mode polling activé (rechargement toutes les 5s)')
     autoRefreshInterval.value = setInterval(async () => {
       if (isMounted.value && !bidLoading.value) {
         await loadAuction()
@@ -932,6 +1074,58 @@ onUnmounted(() => {
 
 .auction-detail {
   animation: fadeIn 0.5s ease;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.ws-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.ws-indicator.ws-connected {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 2px solid #28a745;
+  color: #155724;
+}
+
+.ws-indicator.ws-disconnected {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border: 2px solid #dc3545;
+  color: #721c24;
+}
+
+.ws-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ws-connected .ws-dot {
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.ws-text {
+  font-size: 0.85rem;
 }
 
 .btn-back {
