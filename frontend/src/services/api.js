@@ -1,5 +1,13 @@
 // Service API pour communiquer avec le backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Service API pour communiquer avec le backend
+const isDev = import.meta.env.DEV
+
+const API_BASE_URL = isDev
+  ? 'http://localhost:5000/api'                    // dev local
+  : import.meta.env.VITE_API_URL                   // prod → DOIT être défini
+
+console.log('API_BASE_URL =', API_BASE_URL) // temporaire pour vérifier en prod
+
 
 class ApiService {
   constructor() {
