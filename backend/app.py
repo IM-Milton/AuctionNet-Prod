@@ -143,9 +143,12 @@ def create_app():
         users = repo.load("users")
         ensure_user_uniqueness(users, payload.email)
         new_id = repo.next_id(users, "users", prefix="u_")
+        # Extraire username de l'email (partie avant le @)
+        username = payload.email.split('@')[0]
         users.setdefault("users", []).append({
             "id": new_id,
             "email": payload.email,
+            "username": username,
             "password_hash": hash_password(payload.password),
             "balance": 100000.0,
             "held": 0.0,
@@ -315,20 +318,25 @@ def create_app():
         # Filtrer les bids pour cette enchère et ajouter les infos utilisateur
         auction_bids = []
         for b in bids:
-            if b["auction_id"] == aid:
-                user = user_map.get(b["user_id"], {})
+            if b.get("auction_id") == aid:
+                user = user_map.get(b.get("user_id"), {})
+                # Le champ est 'placed_at' dans le YAML, pas 'timestamp'
+                placed_at = b.get("placed_at", "")
+                # Extraire username de l'email si le champ username n'existe pas
+                email = user.get("email", "")
+                username = user.get("username", email.split('@')[0] if email else "Inconnu")
                 auction_bids.append({
-                    "id": b["id"],
-                    "amount": b["amount"],
-                    "timestamp": b["timestamp"],
+                    "id": b.get("id"),
+                    "amount": b.get("amount"),
+                    "timestamp": placed_at,  # Renommer pour l'API frontend
                     "user": {
                         "id": user.get("id"),
-                        "username": user.get("username", "Inconnu")
+                        "username": username
                     }
                 })
         
         # Trier par timestamp décroissant (plus récent en premier)
-        auction_bids.sort(key=lambda x: x["timestamp"], reverse=True)
+        auction_bids.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
         
         return {"bids": auction_bids}
 
@@ -419,4 +427,6 @@ if __name__ == '__main__':
     (Path(__file__).parent / "local_data" / "media").mkdir(parents=True, exist_ok=True)
 
     app, socketio = create_app()
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # Note: debug=True avec gevent peut causer des problèmes avec le reloader
+    # Utiliser use_reloader=False pour éviter l'erreur WERKZEUG_SERVER_FD
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
