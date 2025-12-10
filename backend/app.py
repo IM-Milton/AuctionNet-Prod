@@ -189,6 +189,40 @@ def create_app():
             "purchases": user.get("purchases", [])
         }
 
+    @app.post('/api/me/credit')
+    @jwt_required()
+    def credit_account():
+        uid = get_jwt_identity()
+        data = request.get_json() or {}
+        
+        # Valider le montant
+        amount = data.get('amount', 0)
+        if not isinstance(amount, (int, float)) or amount <= 0:
+            return {"error": "Le montant doit être un nombre positif"}, 400
+        
+        if amount > 10000:
+            return {"error": "Le montant maximum par crédit est de 10 000 €"}, 400
+        
+        # Charger les utilisateurs
+        users_doc = repo.load("users")
+        users = users_doc.get("users", [])
+        user = next(u for u in users if u["id"] == uid)
+        
+        # Ajouter le montant au solde
+        current_balance = user.get("balance", 0.0)
+        new_balance = float(current_balance) + float(amount)
+        user["balance"] = new_balance
+        
+        # Sauvegarder
+        repo.save("users", users_doc)
+        
+        return {
+            "success": True,
+            "previous_balance": current_balance,
+            "amount_credited": amount,
+            "new_balance": new_balance
+        }, 200
+
     # --- Catégories ---
     @app.get('/api/categories')
     def categories():
