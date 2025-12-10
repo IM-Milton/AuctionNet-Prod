@@ -314,22 +314,6 @@
             <span class="live-indicator">🔴 EN DIRECT</span>
           </h2>
 
-          <!-- Statistiques globales du leaderboard -->
-          <div class="leaderboard-stats" v-if="leaderboard.length > 0">
-            <div class="leader-stat-item">
-              <span class="stat-number">{{ leaderboard.length }}</span>
-              <span class="stat-text">Participants</span>
-            </div>
-            <div class="leader-stat-item">
-              <span class="stat-number">{{ totalBidsInLeaderboard }}</span>
-              <span class="stat-text">Enchères totales</span>
-            </div>
-            <div class="leader-stat-item">
-              <span class="stat-number">{{ highestBidDifference }} €</span>
-              <span class="stat-text">Écart avec 2ème</span>
-            </div>
-          </div>
-
           <div class="leaderboard" v-if="leaderboard.length > 0">
             <div
               class="leaderboard-item"
