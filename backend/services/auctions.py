@@ -27,7 +27,9 @@ def list_auctions(repo, status: Optional[str] = None,
     auctions, bids, users, products = _load_all(repo)
     auctions_list = auctions.get("auctions", [])
     products_list = products.get("products", [])
+    users_list = users.get("users", [])
     prod_map = {p["id"]: p for p in products_list}
+    user_map = {u["id"]: u for u in users_list}
 
     out: List[Dict[str, Any]] = []
     for a in auctions_list:
@@ -47,8 +49,15 @@ def list_auctions(repo, status: Optional[str] = None,
             if s not in p.get("title", "").lower() and s not in p.get("description", "").lower():
                 continue
 
+        # Ajouter le nom du gagnant si l'enchère est terminée
+        winner_username = None
+        if a.get("winner_id"):
+            winner = user_map.get(a["winner_id"])
+            if winner:
+                winner_username = winner.get("username", winner.get("email", "").split("@")[0])
+
         # ⚠️ NE PAS convertir les dates ici
-        out.append({**a, "product": p})
+        out.append({**a, "product": p, "winner_username": winner_username})
 
     return {"auctions": out}
 
@@ -77,7 +86,9 @@ def get_auction(repo, auction_id: str):
     auctions = repo.load("auctions").get("auctions", [])
     bids = repo.load("bids").get("bids", [])
     products = repo.load("products").get("products", [])
+    users = repo.load("users").get("users", [])
     prod_map = {p["id"]: p for p in products}
+    user_map = {u["id"]: u for u in users}
     a = next((x for x in auctions if x["id"] == auction_id), None)
     if not a:
         return None
@@ -85,7 +96,14 @@ def get_auction(repo, auction_id: str):
     # Compter le nombre d'enchères (bids) pour cette enchère
     bids_count = len([b for b in bids if b["auction_id"] == auction_id])
     
-    return {**a, "product": prod_map.get(a["product_id"]), "bids_count": bids_count}
+    # Ajouter le nom du gagnant si l'enchère est terminée
+    winner_username = None
+    if a.get("winner_id"):
+        winner = user_map.get(a["winner_id"])
+        if winner:
+            winner_username = winner.get("username", winner.get("email", "").split("@")[0])
+    
+    return {**a, "product": prod_map.get(a["product_id"]), "bids_count": bids_count, "winner_username": winner_username}
 
 
 def create_auction(repo, payload):

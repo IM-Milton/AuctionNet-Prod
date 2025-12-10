@@ -232,9 +232,11 @@ const auctionDuration = computed(() => {
   
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
   
-  if (days > 0) return `${days} jour(s) et ${hours} heure(s)`
-  return `${hours} heure(s)`
+  if (days > 0) return `${days} jour(s), ${hours} heure(s) et ${minutes} minute(s)`
+  if (hours > 0) return `${hours} heure(s) et ${minutes} minute(s)`
+  return `${minutes} minute(s)`
 })
 
 // Validation du formulaire
