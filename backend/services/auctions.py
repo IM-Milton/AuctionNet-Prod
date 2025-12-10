@@ -214,9 +214,12 @@ def close_auction_if_due(repo, auction_id: str):
         if a.get("current_bid_id"):
             win = next(b for b in bids_doc.get("bids", []) if b["id"] == a["current_bid_id"])
             buyer = next(u for u in users_doc.get("users", []) if u["id"] == win["user_id"])
+            # Débiter le compte et ajouter l'achat
             buyer["held"] = float(buyer.get("held", 0.0)) - float(win["amount"])
             buyer["balance"] = float(buyer.get("balance", 0.0)) - float(win["amount"])
             buyer.setdefault("purchases", []).append(a["product_id"])
+            # Ajouter le winner_id à l'enchère
+            a["winner_id"] = win["user_id"]
         # Save
         repo.save("users", users_doc)
         repo.save("auctions", auctions_doc)
