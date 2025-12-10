@@ -149,9 +149,12 @@ def create_app():
         users = repo.load("users")
         ensure_user_uniqueness(users, payload.email)
         new_id = repo.next_id(users, "users", prefix="u_")
+        # Extraire username de l'email (partie avant le @)
+        username = payload.email.split('@')[0]
         users.setdefault("users", []).append({
             "id": new_id,
             "email": payload.email,
+            "username": username,
             "password_hash": hash_password(payload.password),
             "balance": 100000.0,
             "held": 0.0,
@@ -185,6 +188,40 @@ def create_app():
             "held": user.get("held", 0.0),
             "purchases": user.get("purchases", [])
         }
+
+    @app.post('/api/me/credit')
+    @jwt_required()
+    def credit_account():
+        uid = get_jwt_identity()
+        data = request.get_json() or {}
+        
+        # Valider le montant
+        amount = data.get('amount', 0)
+        if not isinstance(amount, (int, float)) or amount <= 0:
+            return {"error": "Le montant doit être un nombre positif"}, 400
+        
+        if amount > 10000:
+            return {"error": "Le montant maximum par crédit est de 10 000 €"}, 400
+        
+        # Charger les utilisateurs
+        users_doc = repo.load("users")
+        users = users_doc.get("users", [])
+        user = next(u for u in users if u["id"] == uid)
+        
+        # Ajouter le montant au solde
+        current_balance = user.get("balance", 0.0)
+        new_balance = float(current_balance) + float(amount)
+        user["balance"] = new_balance
+        
+        # Sauvegarder
+        repo.save("users", users_doc)
+        
+        return {
+            "success": True,
+            "previous_balance": current_balance,
+            "amount_credited": amount,
+            "new_balance": new_balance
+        }, 200
 
     # --- Catégories ---
     @app.get('/api/categories')
@@ -321,20 +358,25 @@ def create_app():
         # Filtrer les bids pour cette enchère et ajouter les infos utilisateur
         auction_bids = []
         for b in bids:
-            if b["auction_id"] == aid:
-                user = user_map.get(b["user_id"], {})
+            if b.get("auction_id") == aid:
+                user = user_map.get(b.get("user_id"), {})
+                # Le champ est 'placed_at' dans le YAML, pas 'timestamp'
+                placed_at = b.get("placed_at", "")
+                # Extraire username de l'email si le champ username n'existe pas
+                email = user.get("email", "")
+                username = user.get("username", email.split('@')[0] if email else "Inconnu")
                 auction_bids.append({
-                    "id": b["id"],
-                    "amount": b["amount"],
-                    "timestamp": b["timestamp"],
+                    "id": b.get("id"),
+                    "amount": b.get("amount"),
+                    "timestamp": placed_at,  # Renommer pour l'API frontend
                     "user": {
                         "id": user.get("id"),
-                        "username": user.get("username", "Inconnu")
+                        "username": username
                     }
                 })
         
         # Trier par timestamp décroissant (plus récent en premier)
-        auction_bids.sort(key=lambda x: x["timestamp"], reverse=True)
+        auction_bids.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
         
         return {"bids": auction_bids}
 
@@ -446,6 +488,7 @@ if __name__ == '__main__':
     (Path(__file__).parent / "local_data" / "media").mkdir(parents=True, exist_ok=True)
 
     app, socketio = create_app()
+<<<<<<< HEAD
 
     port = int(os.environ.get("PORT", 5000))
 
@@ -456,3 +499,8 @@ if __name__ == '__main__':
         debug=False,                   # en prod -> False
         allow_unsafe_werkzeug=True     # IMPORTANT pour Docker / Railway
     )
+=======
+    # Note: debug=True avec gevent peut causer des problèmes avec le reloader
+    # Utiliser use_reloader=False pour éviter l'erreur WERKZEUG_SERVER_FD
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+>>>>>>> develop
