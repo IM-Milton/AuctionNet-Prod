@@ -153,6 +153,7 @@ async function loadAuctions() {
       price: auction.current_price || auction.start_price,
       image: auction.product?.images?.[0] || '/assets/images/placeholder.jpg',
       category: auction.product?.category || 'other',
+      startTime: auction.start_at ? new Date(auction.start_at) : null,
       endTime: new Date(auction.end_at),
       bids: auction.bids_count || 0,
       status: auction.status
@@ -253,25 +254,12 @@ onActivated(async () => {
   startExpirationCheck()
 })
 
-// Vérifier les changements de statut des enchères toutes les secondes
+// Vérifier les changements de statut des enchères toutes les 5 secondes
 function checkExpiredAuctions() {
   const now = new Date().getTime()
   let hasChanged = false
   
   auctions.value = auctions.value.map(auction => {
-    // Vérifier si une enchère "à venir" doit démarrer
-    if (auction.status === 'scheduled' && auction.endTime) {
-      // Calculer startTime à partir de endTime et de la durée (on suppose 4 jours)
-      const endTime = new Date(auction.endTime).getTime()
-      const startTime = endTime - (4 * 24 * 60 * 60 * 1000) // 4 jours avant
-      
-      if (now >= startTime && now < endTime) {
-        console.log(`🚀 Enchère ${auction.id} démarrée, statut: scheduled -> running`)
-        hasChanged = true
-        return { ...auction, status: 'running' }
-      }
-    }
-    
     // Vérifier si une enchère "en cours" est expirée
     if (auction.status === 'running' && auction.endTime) {
       const endTime = new Date(auction.endTime).getTime()
@@ -285,10 +273,15 @@ function checkExpiredAuctions() {
     return auction
   })
   
-  // Si des enchères ont changé de statut, recharger depuis le backend pour sync
+  // Si des enchères ont changé de statut, recharger depuis le backend pour sync (mais une seule fois)
   if (hasChanged) {
     console.log('🔄 Rechargement des enchères suite à changement de statut')
-    loadAuctions()
+    // Arrêter l'intervalle temporairement pour éviter les boucles
+    stopExpirationCheck()
+    loadAuctions().then(() => {
+      // Redémarrer l'intervalle après le rechargement
+      startExpirationCheck()
+    })
   }
 }
 
@@ -297,9 +290,9 @@ function startExpirationCheck() {
   if (expirationCheckInterval) {
     clearInterval(expirationCheckInterval)
   }
-  // Vérifier toutes les secondes
-  expirationCheckInterval = setInterval(checkExpiredAuctions, 1000)
-  console.log('✅ Vérification d\'expiration démarrée')
+  // Vérifier toutes les 5 secondes (au lieu de 1 seconde pour éviter les boucles)
+  expirationCheckInterval = setInterval(checkExpiredAuctions, 5000)
+  console.log('✅ Vérification d\'expiration démarrée (toutes les 5 secondes)')
 }
 
 function stopExpirationCheck() {
