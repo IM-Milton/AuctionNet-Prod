@@ -180,7 +180,9 @@ def create_app():
     def me():
         uid = get_jwt_identity()
         users = repo.load("users").get("users", [])
-        user = next(u for u in users if u["id"] == uid)
+        user = next((u for u in users if u["id"] == uid), None)
+        if not user:
+            return {"error": "User not found"}, 404
         return {
             "id": user["id"],
             "email": user["email"],
