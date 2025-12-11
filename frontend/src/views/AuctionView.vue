@@ -136,7 +136,11 @@
           v-else-if="auction.status === 'closed'"
         >
           <div class="timer-label">🏁 Enchère terminée</div>
-          <div v-if="auction.winner_id" class="winner-info">
+          <div v-if="auction.winner_username" class="winner-info">
+            <p>🎉 Gagnant: <strong>{{ auction.winner_username }}</strong></p>
+            <p>💰 Prix final: {{ auction.current_price }} €</p>
+          </div>
+          <div v-else-if="auction.winner_id" class="winner-info">
             <p>🎉 Gagnant: {{ auction.winner_id }}</p>
             <p>💰 Prix final: {{ auction.current_price }} €</p>
           </div>
