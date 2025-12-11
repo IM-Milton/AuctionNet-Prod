@@ -156,7 +156,8 @@ async function loadAuctions() {
       startTime: auction.start_at ? new Date(auction.start_at) : null,
       endTime: new Date(auction.end_at),
       bids: auction.bids_count || 0,
-      status: auction.status
+      status: auction.status,
+      winner_username: auction.winner_username
     })) || []
     
   } catch (error) {

@@ -29,6 +29,11 @@
         </span>
       </div>
 
+      <!-- Afficher le gagnant si l'enchère est terminée -->
+      <div v-if="status === 'closed' && auction.winner_username" class="winner-badge">
+        🏆 Gagnant: <strong>{{ auction.winner_username }}</strong>
+      </div>
+
       <div class="auction-bottom">
         <div class="price-block">
           <span class="price-label">Prix actuel</span>
@@ -59,6 +64,7 @@ type UiAuction = {
   endTime: Date | null;
   bids: number;
   status: StatusFilter;
+  winner_username?: string;
 };
 
 const props = defineProps<{
@@ -265,6 +271,23 @@ onUnmounted(() => {
 .bids {
   font-size: 0.8rem;
   color: #6b7280;
+}
+
+/* Badge du gagnant pour les enchères terminées */
+.winner-badge {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1f2933;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.winner-badge strong {
+  color: #b8860b;
+  font-weight: 600;
 }
 
 /* Bas de la carte : prix + statut mini */
