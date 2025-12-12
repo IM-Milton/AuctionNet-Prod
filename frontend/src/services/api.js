@@ -119,6 +119,12 @@ class ApiService {
     })
   }
 
+  async deleteAuction(auctionId) {
+    return await this.request(`/auctions/${auctionId}`, {
+      method: 'DELETE',
+    })
+  }
+
   // --- Products endpoints ---
   async createProduct(productData) {
     return await this.request('/products', {

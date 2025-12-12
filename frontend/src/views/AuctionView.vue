@@ -9,6 +9,16 @@
     <div class="header-controls">
       <router-link to="/" class="btn-back"> ← Retour </router-link>
 
+      <!-- Bouton supprimer (visible uniquement pour le créateur) -->
+      <button 
+        v-if="isCreator && auction.status === 'scheduled' && auction.bids_count === 0"
+        @click="confirmDelete"
+        class="btn-delete"
+        :disabled="deleteLoading"
+      >
+        {{ deleteLoading ? '⏳ Suppression...' : '🗑️ Supprimer' }}
+      </button>
+
       <!-- Indicateur WebSocket -->
       <div
         class="ws-indicator"
@@ -536,6 +546,7 @@ const bidAmount = ref(0);
 const now = ref(new Date());
 const loading = ref(true);
 const bidLoading = ref(false);
+const deleteLoading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const currentUser = ref(null);
@@ -927,6 +938,47 @@ async function placeBid() {
 function quickBid(increment) {
   const currentPrice = auction.value.current_price || auction.value.start_price;
   bidAmount.value = currentPrice + increment;
+}
+
+// Vérifier si l'utilisateur actuel est le créateur de l'enchère
+const isCreator = computed(() => {
+  if (!currentUser.value || !auction.value || !auction.value.product) {
+    return false;
+  }
+  return auction.value.product.owner_id === currentUser.value.id;
+});
+
+// Confirmer et supprimer l'enchère
+async function confirmDelete() {
+  if (!confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette enchère ? Cette action est irréversible.")) {
+    return;
+  }
+
+  try {
+    deleteLoading.value = true;
+    errorMessage.value = "";
+
+    await api.deleteAuction(auctionId);
+
+    successMessage.value = "✅ Enchère supprimée avec succès !";
+
+    // Rediriger vers la page d'accueil après 1 seconde
+    setTimeout(() => {
+      router.push('/');
+    }, 1000);
+  } catch (error) {
+    console.error("Erreur lors de la suppression:", error);
+    
+    if (error.status === 400) {
+      errorMessage.value = "❌ Impossible de supprimer une enchère avec des enchères existantes.";
+    } else if (error.status === 403) {
+      errorMessage.value = "❌ Vous n'êtes pas autorisé à supprimer cette enchère.";
+    } else {
+      errorMessage.value = error.message || "Impossible de supprimer l'enchère";
+    }
+  } finally {
+    deleteLoading.value = false;
+  }
 }
 
 // Calculer le temps restant
@@ -1358,6 +1410,31 @@ onUnmounted(() => {
 .btn-back:hover {
   background: #f0f0f0;
   transform: translateX(-5px);
+}
+
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 65, 108, 0.3);
+}
+
+.btn-delete:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 65, 108, 0.4);
+}
+
+.btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .detail-content {
