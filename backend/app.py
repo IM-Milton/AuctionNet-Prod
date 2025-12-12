@@ -490,6 +490,14 @@ if __name__ == '__main__':
     (Path(__file__).parent / "local_data" / "media").mkdir(parents=True, exist_ok=True)
 
     app, socketio = create_app()
-    # Note: debug=True avec gevent peut causer des problèmes avec le reloader
-    # Utiliser use_reloader=False pour éviter l'erreur WERKZEUG_SERVER_FD
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+
+    port = int(os.environ.get("PORT", 5000))
+
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        debug=False,                   # en prod -> False
+        allow_unsafe_werkzeug=True     # IMPORTANT pour Docker / Railway
+    )
+
