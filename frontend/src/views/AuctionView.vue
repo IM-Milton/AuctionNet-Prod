@@ -787,7 +787,7 @@ async function loadBidHistory() {
   try {
     console.log("🔄 Chargement de l'historique des enchères...");
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auctions/${auctionId}/bids`
+      `${api.baseURL}/auctions/${auctionId}/bids`
     );
     if (!response.ok) {
       console.warn("⚠️ Impossible de charger l'historique des enchères");

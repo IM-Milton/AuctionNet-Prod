@@ -1,6 +1,13 @@
 import { io } from 'socket.io-client'
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
+const isProd = import.meta.env.PROD
+
+// En dev → localhost, en prod → backend Railway
+const SOCKET_URL = isProd
+  ? 'https://auctionnet-backend.up.railway.app'  // ⚠️ Remplace par ton URL backend
+  : 'http://localhost:5000'
+
+console.log('SOCKET_URL =', SOCKET_URL)
 
 class WebSocketService {
   constructor() {
