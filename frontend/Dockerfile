@@ -17,8 +17,8 @@ FROM nginx:1.27-alpine
 # Copie du build dans le dossier servit par Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Optionnel : config nginx custom si tu veux un proxy /api
-# Copier un fichier nginx.conf si nécessaire.
+# Copie de la configuration Nginx pour gérer le routing SPA
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
