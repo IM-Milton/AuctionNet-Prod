@@ -127,21 +127,7 @@
         <!-- Images -->
         <section class="form-section">
           <h2>📸 Images</h2>
-          <div class="form-group">
-            <label for="imageUrl">URL de l'image principale *</label>
-            <input
-              type="url"
-              id="imageUrl"
-              v-model="form.imageUrl"
-              placeholder="https://example.com/image.jpg"
-              required
-            />
-            <span class="hint">Entrez l'URL d'une image hébergée en ligne</span>
-          </div>
-
-          <div v-if="form.imageUrl" class="image-preview">
-            <img :src="form.imageUrl" alt="Aperçu" @error="imageError = true" />
-          </div>
+          <ImageUploader v-model="form.imageUrl" />
         </section>
 
         <!-- Actions -->
@@ -162,6 +148,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import ImageUploader from '@/components/ImageUploader.vue'
 
 const router = useRouter()
 
