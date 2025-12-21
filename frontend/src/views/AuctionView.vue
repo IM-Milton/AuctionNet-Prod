@@ -43,11 +43,7 @@
     <div class="detail-content">
       <div class="image-section">
         <img
-          :src="
-            auction.product?.images?.[0] ||
-            auction.image ||
-            'https://via.placeholder.com/400x300?text=Pas+d%27image'
-          "
+          :src="getImageUrl(auction.product?.images)"
           :alt="auction.product?.title || auction.title"
           class="main-image"
         />
@@ -535,6 +531,29 @@ import { useRoute, useRouter } from "vue-router";
 import api from "@/services/api";
 import websocketService from "@/services/websocket";
 import { useAuctionEvents } from "@/composables/useAuctionEvents";
+
+// Helper pour obtenir l'URL d'une image
+function getImageUrl(images) {
+  if (!images || images.length === 0) {
+    return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
+  }
+  
+  const img = images[0]
+  if (!img) return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
+  
+  // Si c'est une Data URL (base64) ou une URL complète, l'utiliser directement
+  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
+    return img
+  }
+  
+  // Si c'est un chemin media, le transformer
+  if (img.match(/^\/?media\//)) {
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    return `${base.replace(/\/+$/, '')}/${img.replace(/^\//, '')}`
+  }
+  
+  return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
+}
 
 const route = useRoute();
 const router = useRouter();

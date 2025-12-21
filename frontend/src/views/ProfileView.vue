@@ -458,10 +458,20 @@ onUnmounted(() => {
 function mapAuction(auction) {
   const product = auction.product || {};
   const images = product.images || [];
-  const imageUrl =
-    images.length > 0
-      ? toMediaUrl(images[0])
-      : "/assets/images/placeholder.jpg";
+  
+  // Gérer différents types d'images : URLs absolues, chemins media, Data URLs
+  let imageUrl = "/assets/images/placeholder.jpg";
+  
+  if (images.length > 0 && images[0]) {
+    const img = images[0];
+    // Si c'est une Data URL (base64) ou une URL complète, l'utiliser directement
+    if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
+      imageUrl = img;
+    } else {
+      // Sinon, c'est un chemin media à transformer
+      imageUrl = toMediaUrl(img);
+    }
+  }
 
   return {
     id: auction.id,

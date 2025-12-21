@@ -134,6 +134,29 @@ const loading = ref(true)
 const categories = ref([])
 let expirationCheckInterval = null
 
+// Helper pour obtenir l'URL d'une image
+function getImageUrl(images) {
+  if (!images || images.length === 0) {
+    return '/assets/images/placeholder.jpg'
+  }
+  
+  const img = images[0]
+  if (!img) return '/assets/images/placeholder.jpg'
+  
+  // Si c'est une Data URL (base64) ou une URL complète, l'utiliser directement
+  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
+    return img
+  }
+  
+  // Si c'est un chemin media, le transformer
+  if (img.match(/^\/?media\//)) {
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    return `${base.replace(/\/+$/, '')}/${img.replace(/^\//, '')}`
+  }
+  
+  return '/assets/images/placeholder.jpg'
+}
+
 // Charger les enchères depuis le backend
 async function loadAuctions() {
   try {
@@ -151,7 +174,7 @@ async function loadAuctions() {
       id: auction.id,
       title: auction.product?.title || 'Sans titre',
       price: auction.current_price || auction.start_price,
-      image: auction.product?.images?.[0] || '/assets/images/placeholder.jpg',
+      image: getImageUrl(auction.product?.images),
       category: auction.product?.category || 'other',
       startTime: auction.start_at ? new Date(auction.start_at) : null,
       endTime: new Date(auction.end_at),
