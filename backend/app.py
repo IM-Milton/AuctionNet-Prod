@@ -302,6 +302,46 @@ def create_app():
             return {"error": "Not found"}, 404
         return result
 
+    @app.delete('/api/auctions/<aid>')
+    @jwt_required()
+    def delete_auction(aid):
+        uid = get_jwt_identity()
+        
+        # Charger l'enchère
+        auctions_doc = repo.load("auctions")
+        auctions = auctions_doc.get("auctions", [])
+        auction = next((a for a in auctions if a["id"] == aid), None)
+        
+        if not auction:
+            return {"error": "Auction not found"}, 404
+        
+        # Vérifier que l'utilisateur est le propriétaire du produit
+        if not product_is_owned_by(repo, auction["product_id"], uid):
+            return {"error": "You can only delete your own auctions"}, 403
+        
+        # Ne pas autoriser la suppression si l'enchère a déjà des enchères
+        bids_doc = repo.load("bids")
+        auction_bids = [b for b in bids_doc.get("bids", []) if b["auction_id"] == aid]
+        
+        if len(auction_bids) > 0:
+            return {"error": "Cannot delete auction with existing bids"}, 400
+        
+        # Supprimer l'enchère
+        auctions_doc["auctions"] = [a for a in auctions if a["id"] != aid]
+        repo.save("auctions", auctions_doc)
+        
+        # Annuler les jobs planifiés pour cette enchère
+        try:
+            scheduler.remove_job(f"open_{aid}")
+        except:
+            pass
+        try:
+            scheduler.remove_job(f"close_{aid}")
+        except:
+            pass
+        
+        return {"message": "Auction deleted successfully"}, 200
+
     @app.post('/api/auctions')
     @jwt_required()
     def post_auction():
