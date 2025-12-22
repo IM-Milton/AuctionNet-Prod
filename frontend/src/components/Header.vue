@@ -2,32 +2,32 @@
   <header class="header">
     <div class="header-content">
       <router-link to="/" class="logo">
-        <span class="logo-icon">⚡</span>
         <span class="logo-text">AuctioNet</span>
       </router-link>
-      
+
       <nav class="nav">
         <router-link to="/" class="nav-link">
-          <span>🏠</span> <span class="nav-text">Accueil</span>
+          <span class="nav-text">Accueil</span>
         </router-link>
-        
+
         <!-- Si connecté -->
         <template v-if="currentUser">
           <router-link to="/profile" class="nav-link">
-            <span>👤</span> <span class="nav-text">{{ currentUser.email }}</span>
+            <span>👤</span>
+            <span class="nav-text">{{ currentUser.email }}</span>
           </router-link>
           <router-link to="/sell" class="btn-sell">
-            <span>💰</span> <span class="nav-text">Vendre</span>
+            <span class="nav-text">Vendre</span>
           </router-link>
           <button @click="logout" class="btn-logout">
-            <span>🚪</span> <span class="nav-text">Déconnexion</span>
+            <span class="nav-text">Déconnexion</span>
           </button>
         </template>
-        
+
         <!-- Si non connecté -->
         <template v-else>
           <router-link to="/login" class="btn-login">
-            <span>🔐</span> <span class="nav-text">Connexion</span>
+            <span class="nav-text">Connexion</span>
           </router-link>
         </template>
       </nav>
@@ -36,184 +36,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '@/services/api'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import api from "@/services/api";
 
-const router = useRouter()
-const currentUser = ref(null)
+const router = useRouter();
+const currentUser = ref(null);
 
 onMounted(() => {
-  loadCurrentUser()
-})
+  loadCurrentUser();
+});
 
 function loadCurrentUser() {
-  const user = localStorage.getItem('currentUser')
+  const user = localStorage.getItem("currentUser");
   if (user) {
-    currentUser.value = JSON.parse(user)
+    currentUser.value = JSON.parse(user);
   }
 }
 
 function logout() {
-  if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-    api.logout() // Supprime le token et les données utilisateur
-    currentUser.value = null
-    router.push('/')
-    window.location.reload()
+  if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+    api.logout(); // Supprime le token et les données utilisateur
+    currentUser.value = null;
+    router.push("/");
+    window.location.reload();
   }
 }
 </script>
 
-<style scoped>
-.header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: #1976d2;
-  font-size: 1.5rem;
-  font-weight: 700;
-  transition: transform 0.3s ease;
-}
-
-.logo:hover {
-  transform: scale(1.05);
-  text-decoration: none;
-}
-
-.logo-icon {
-  font-size: 2rem;
-}
-
-.logo-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #555;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.nav-link:hover {
-  background: #f0f0f0;
-  color: #1976d2;
-  text-decoration: none;
-}
-
-.nav-link.router-link-active {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.btn-sell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-sell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-login {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-}
-
-.btn-login:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
-}
-
-.btn-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #ff5252;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-logout:hover {
-  background: #e04848;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    padding: 1rem;
-  }
-  
-  .nav {
-    gap: 0.5rem;
-  }
-  
-  .nav-text {
-    display: none;
-  }
-  
-  .nav-link,
-  .btn-sell {
-    padding: 0.5rem 0.75rem;
-  }
-}
-</style>
+<style scoped src="./css/Header.css"></style>

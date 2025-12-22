@@ -4,8 +4,6 @@ Step for ini :
 3. export JWT_SECRET="dev_change_me"
 4. if on wsl : python3 app.py or python app.py
 
-# Activate virtual env
-source .venv/bin/activate  
 
 # Santé
 curl -s http://localhost:5000/api/health

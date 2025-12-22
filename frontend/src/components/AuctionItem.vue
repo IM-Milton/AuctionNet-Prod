@@ -1,7 +1,7 @@
 <template>
   <div class="auction-card" @click="$emit('click')">
     <div class="image-wrapper">
-      <img :src="auction.image"  class="auction-image" />
+      <img :src="auction.image" class="auction-image" />
 
       <!-- Badge statut -->
       <div class="status-chip" :class="statusClass">
@@ -30,8 +30,11 @@
       </div>
 
       <!-- Afficher le gagnant si l'enchère est terminée -->
-      <div v-if="status === 'closed' && auction.winner_username" class="winner-badge">
-        🏆 Gagnant: <strong>{{ auction.winner_username }}</strong>
+      <div
+        v-if="status === 'closed' && auction.winner_username"
+        class="winner-badge"
+      >
+        Gagnant: <strong>{{ auction.winner_username }}</strong>
       </div>
 
       <div class="auction-bottom">
@@ -114,8 +117,12 @@ function z(n: number) {
 
 const countdownText = computed(() => {
   if (remainingMs.value <= 0) return "00s";
-  if (days.value > 0)   return `${days.value}j ${hours.value}h ${minutes.value}m ${z(seconds.value)}s`;
-  if (hours.value > 0)  return `${hours.value}h ${minutes.value}m ${z(seconds.value)}s`;
+  if (days.value > 0)
+    return `${days.value}j ${hours.value}h ${minutes.value}m ${z(
+      seconds.value
+    )}s`;
+  if (hours.value > 0)
+    return `${hours.value}h ${minutes.value}m ${z(seconds.value)}s`;
   return `${minutes.value}m ${z(seconds.value)}s`;
 });
 
@@ -161,187 +168,4 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-.auction-card {
-  position: relative;
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, translate 0.2s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.auction-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-}
-
-.image-wrapper {
-  position: relative;
-  overflow: hidden;
-}
-
-.auction-image {
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.3s ease;
-}
-
-.auction-card:hover .auction-image {
-  transform: scale(1.03);
-}
-
-/* Badge statut en haut à gauche */
-.status-chip {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Timer en bas de l'image */
-.timer-chip {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #fff;
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(4px);
-}
-
-/* Couleurs du statut */
-.status-scheduled {
-  background: linear-gradient(135deg, #ffb347, #ffcc33);
-}
-
-.status-running {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-}
-
-.status-closed {
-  background: #6c757d;
-}
-
-/* Corps de carte */
-.auction-body {
-  padding: 1rem 1.1rem 1.1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.auction-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2933;
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Ligne avec catégorie + nb d'enchères */
-.auction-meta-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.category-pill {
-  padding: 0.18rem 0.6rem;
-  border-radius: 999px;
-  background: #f1f3ff;
-  color: #667eea;
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
-.bids {
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-/* Badge du gagnant pour les enchères terminées */
-.winner-badge {
-  margin-top: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #1f2933;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-}
-
-.winner-badge strong {
-  color: #b8860b;
-  font-weight: 600;
-}
-
-/* Bas de la carte : prix + statut mini */
-.auction-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.4rem;
-}
-
-.price-block {
-  display: flex;
-  flex-direction: column;
-}
-
-.price-label {
-  font-size: 0.78rem;
-  color: #9ca3af;
-}
-
-.price-value {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-/* petit indicateur de statut à droite */
-.status-dot-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: #6b7280;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-}
-
-/* couleurs dot */
-.dot-scheduled {
-  background: #ffb347;
-}
-.dot-running {
-  background: #22c55e;
-}
-.dot-closed {
-  background: #9ca3af;
-}
-
-.status-small-text {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-</style>
+<style scoped src="./css/AuctionItem.css"></style>

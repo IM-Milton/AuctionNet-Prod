@@ -10,13 +10,17 @@
       <router-link to="/" class="btn-back"> ← Retour </router-link>
 
       <!-- Bouton supprimer (visible uniquement pour le créateur) -->
-      <button 
-        v-if="isCreator && auction.status === 'scheduled' && auction.bids_count === 0"
+      <button
+        v-if="
+          isCreator &&
+          auction.status === 'scheduled' &&
+          auction.bids_count === 0
+        "
         @click="confirmDelete"
         class="btn-delete"
         :disabled="deleteLoading"
       >
-        {{ deleteLoading ? '⏳ Suppression...' : '🗑️ Supprimer' }}
+        {{ deleteLoading ? "Suppression..." : "Supprimer" }}
       </button>
 
       <!-- Indicateur WebSocket -->
@@ -76,7 +80,7 @@
               <span>👥 {{ auction.bids_count || 0 }} enchères</span>
             </div>
             <div class="stat-item">
-              <span>� Prix de départ: {{ auction.start_price }} €</span>
+              <span>Prix de départ: {{ auction.start_price }} €</span>
             </div>
           </div>
         </div>
@@ -141,14 +145,16 @@
           class="timer-section closed"
           v-else-if="auction.status === 'closed'"
         >
-          <div class="timer-label">🏁 Enchère terminée</div>
+          <div class="timer-label">Enchère terminée</div>
           <div v-if="auction.winner_username" class="winner-info">
-            <p>🎉 Gagnant: <strong>{{ auction.winner_username }}</strong></p>
-            <p>💰 Prix final: {{ auction.current_price }} €</p>
+            <p>
+              Gagnant: <strong>{{ auction.winner_username }}</strong>
+            </p>
+            <p>Prix final: {{ auction.current_price }} €</p>
           </div>
           <div v-else-if="auction.winner_id" class="winner-info">
-            <p>🎉 Gagnant: {{ auction.winner_id }}</p>
-            <p>💰 Prix final: {{ auction.current_price }} €</p>
+            <p>Gagnant: {{ auction.winner_id }}</p>
+            <p>Prix final: {{ auction.current_price }} €</p>
           </div>
         </div>
 
@@ -213,14 +219,14 @@
           <p class="info-message">
             {{
               auction.status === "scheduled"
-                ? "⏰ L'enchère n'a pas encore commencé"
-                : "🏁 L'enchère est terminée"
+                ? "L'enchère n'a pas encore commencé"
+                : "L'enchère est terminée"
             }}
           </p>
         </div>
 
         <div class="description-section">
-          <h3>📝 Description</h3>
+          <h3>Description</h3>
           <p>
             {{
               auction.product?.description || "Aucune description disponible."
@@ -364,13 +370,7 @@
                   <span
                     v-if="index === 0 && auction?.status === 'running'"
                     class="winning-badge"
-                    >🎯 En tête</span
-                  >
-                  <span
-                    v-if="leader.bidCount >= 5"
-                    class="active-badge"
-                    title="Enchérisseur actif"
-                    >🔥</span
+                    >En tête</span
                   >
                 </div>
                 <div class="leader-stats">
@@ -378,7 +378,7 @@
                     class="bid-count"
                     :title="`${leader.bidCount} enchère(s) placée(s)`"
                   >
-                    💰 {{ leader.bidCount }} enchère{{
+                    {{ leader.bidCount }} enchère{{
                       leader.bidCount > 1 ? "s" : ""
                     }}
                   </span>
@@ -434,7 +434,7 @@
 
     <!-- Historique détaillé des enchères -->
     <div class="bid-history-detailed">
-      <h2>📊 Historique des enchères ({{ bidHistory.length }})</h2>
+      <h2>Historique des enchères ({{ bidHistory.length }})</h2>
 
       <!-- Timeline -->
       <div class="bid-timeline" v-if="bidHistory.length > 0">
@@ -455,7 +455,7 @@
                   bid.user.username[0].toUpperCase()
                 }}</span>
                 <span class="user-name">{{ bid.user.username }}</span>
-                <span class="bid-badge" v-if="index === 0">🔥 En tête</span>
+                <span class="bid-badge" v-if="index === 0">En tête</span>
               </div>
               <div class="time-info">
                 {{ formatTimestamp(bid.timestamp) }}
@@ -487,7 +487,7 @@
 
     <!-- Section statistiques -->
     <div class="stats-section">
-      <h2>📊 Statistiques de l'enchère</h2>
+      <h2>Statistiques de l'enchère</h2>
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon">👥</div>
@@ -498,7 +498,6 @@
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">📈</div>
           <div class="stat-content">
             <div class="stat-number">{{ bidHistory.length }}</div>
             <div class="stat-label">Total d'enchères</div>
@@ -506,7 +505,6 @@
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-number">{{ averageBid }} €</div>
             <div class="stat-label">Enchère moyenne</div>
@@ -514,7 +512,6 @@
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">⚡</div>
           <div class="stat-content">
             <div class="stat-number">{{ bidsPerHour }}</div>
             <div class="stat-label">Enchères/heure</div>
@@ -535,24 +532,28 @@ import { useAuctionEvents } from "@/composables/useAuctionEvents";
 // Helper pour obtenir l'URL d'une image
 function getImageUrl(images) {
   if (!images || images.length === 0) {
-    return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
+    return "https://via.placeholder.com/400x300?text=Pas+d%27image";
   }
-  
-  const img = images[0]
-  if (!img) return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
-  
+
+  const img = images[0];
+  if (!img) return "https://via.placeholder.com/400x300?text=Pas+d%27image";
+
   // Si c'est une Data URL (base64) ou une URL complète, l'utiliser directement
-  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
-    return img
+  if (
+    img.startsWith("data:") ||
+    img.startsWith("http://") ||
+    img.startsWith("https://")
+  ) {
+    return img;
   }
-  
+
   // Si c'est un chemin media, le transformer
   if (img.match(/^\/?media\//)) {
-    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-    return `${base.replace(/\/+$/, '')}/${img.replace(/^\//, '')}`
+    const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    return `${base.replace(/\/+$/, "")}/${img.replace(/^\//, "")}`;
   }
-  
-  return 'https://via.placeholder.com/400x300?text=Pas+d%27image'
+
+  return "https://via.placeholder.com/400x300?text=Pas+d%27image";
 }
 
 const route = useRoute();
@@ -617,7 +618,7 @@ const leaderboard = computed(() => {
     .sort((a, b) => b.currentBid - a.currentBid)
     .slice(0, 10); // Top 10
 
-  console.log("🏆 Leaderboard mis à jour:", sorted);
+  console.log("Leaderboard mis à jour:", sorted);
   return sorted;
 });
 
@@ -815,12 +816,10 @@ async function loadBidHistory() {
   if (!auction.value || !isMounted.value) return;
 
   try {
-    console.log("🔄 Chargement de l'historique des enchères...");
-    const response = await fetch(
-      `${api.baseURL}/auctions/${auctionId}/bids`
-    );
+    console.log("Chargement de l'historique des enchères...");
+    const response = await fetch(`${api.baseURL}/auctions/${auctionId}/bids`);
     if (!response.ok) {
-      console.warn("⚠️ Impossible de charger l'historique des enchères");
+      console.warn("Impossible de charger l'historique des enchères");
       bidHistory.value = [];
       return;
     }
@@ -831,7 +830,7 @@ async function loadBidHistory() {
     // Force la réactivité en créant un nouveau tableau
     bidHistory.value = [...(data.bids || [])];
 
-    console.log("✅ Historique chargé:", {
+    console.log("Historique chargé:", {
       count: bidHistory.value.length,
       bids: bidHistory.value.map((b) => ({
         user: b.user.username,
@@ -839,7 +838,7 @@ async function loadBidHistory() {
       })),
     });
   } catch (error) {
-    console.error("❌ Erreur lors du chargement de l'historique:", error);
+    console.error("Erreur lors du chargement de l'historique:", error);
     bidHistory.value = [];
   }
 }
@@ -900,19 +899,19 @@ async function placeBid() {
     errorMessage.value = "";
 
     console.log(
-      "🔐 Placement enchère avec token:",
+      "Placement enchère avec token:",
       token.substring(0, 20) + "..."
     );
 
     await api.placeBid(auctionId, bidAmount.value);
 
-    successMessage.value = `✅ Enchère de ${bidAmount.value} € placée avec succès !`;
+    successMessage.value = `Enchère de ${bidAmount.value} € placée avec succès !`;
 
     // Recharger les infos utilisateur pour mettre à jour le solde
     try {
       const userData = await api.getCurrentUser();
       currentUser.value = userData;
-      console.log("🔄 Solde mis à jour:", userData.balance, "€");
+      console.log("Solde mis à jour:", userData.balance, "€");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du profil:", error);
     }
@@ -944,7 +943,7 @@ async function placeBid() {
       error.message.toLowerCase().includes("insufficient")
     ) {
       // Message d'erreur spécifique pour les fonds insuffisants
-      errorMessage.value = `💰 Solde insuffisant ! ${error.message}`;
+      errorMessage.value = `Solde insuffisant ! ${error.message}`;
     } else {
       errorMessage.value = error.message || "Impossible de placer l'enchère";
     }
@@ -969,7 +968,11 @@ const isCreator = computed(() => {
 
 // Confirmer et supprimer l'enchère
 async function confirmDelete() {
-  if (!confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette enchère ? Cette action est irréversible.")) {
+  if (
+    !confirm(
+      "⚠️ Êtes-vous sûr de vouloir supprimer cette enchère ? Cette action est irréversible."
+    )
+  ) {
     return;
   }
 
@@ -979,19 +982,21 @@ async function confirmDelete() {
 
     await api.deleteAuction(auctionId);
 
-    successMessage.value = "✅ Enchère supprimée avec succès !";
+    successMessage.value = "Enchère supprimée avec succès !";
 
     // Rediriger vers la page d'accueil après 1 seconde
     setTimeout(() => {
-      router.push('/');
+      router.push("/");
     }, 1000);
   } catch (error) {
     console.error("Erreur lors de la suppression:", error);
-    
+
     if (error.status === 400) {
-      errorMessage.value = "❌ Impossible de supprimer une enchère avec des enchères existantes.";
+      errorMessage.value =
+        "❌ Impossible de supprimer une enchère avec des enchères existantes.";
     } else if (error.status === 403) {
-      errorMessage.value = "❌ Vous n'êtes pas autorisé à supprimer cette enchère.";
+      errorMessage.value =
+        "❌ Vous n'êtes pas autorisé à supprimer cette enchère.";
     } else {
       errorMessage.value = error.message || "Impossible de supprimer l'enchère";
     }
@@ -1192,9 +1197,9 @@ onMounted(async () => {
       if (!isMounted.value) return;
 
       console.log("\n" + "=".repeat(60));
-      console.log("🔥 NOUVELLE ENCHÈRE REÇUE EN TEMPS RÉEL!");
+      console.log("NOUVELLE ENCHÈRE REÇUE EN TEMPS RÉEL!");
       console.log("=".repeat(60));
-      console.log("📊 Données:", {
+      console.log("Données:", {
         auction_id: data.auction_id,
         current_price: data.auction?.current_price + " €",
         bids_count: data.auction?.bids_count,
@@ -1211,11 +1216,11 @@ onMounted(async () => {
           data.auction.current_price + (data.auction.min_increment || 50);
 
         // Recharger l'historique des enchères pour afficher la nouvelle enchère
-        console.log("🔄 Rechargement de l'historique des enchères...");
+        console.log("Rechargement de l'historique des enchères...");
         loadBidHistory();
 
         // Afficher une notification
-        successMessage.value = `💰 Nouvelle enchère: ${data.auction.current_price} €`;
+        successMessage.value = `Nouvelle enchère: ${data.auction.current_price} €`;
         setTimeout(() => {
           if (isMounted.value) {
             successMessage.value = "";
@@ -1289,1189 +1294,4 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-/* Loading */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  gap: 1rem;
-}
-
-.spinner {
-  font-size: 3rem;
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Alerts */
-.alert {
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
-  animation: slideDown 0.3s ease;
-}
-
-.alert-error {
-  background: #fee;
-  color: #c33;
-  border: 2px solid #fcc;
-}
-
-.alert-success {
-  background: #efe;
-  color: #3a3;
-  border: 2px solid #cfc;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.auction-detail {
-  animation: fadeIn 0.5s ease;
-}
-
-.header-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.ws-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.ws-indicator.ws-connected {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border: 2px solid #28a745;
-  color: #155724;
-}
-
-.ws-indicator.ws-disconnected {
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-  border: 2px solid #dc3545;
-  color: #721c24;
-}
-
-.ws-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.ws-connected .ws-dot {
-  animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.2);
-  }
-}
-
-.ws-text {
-  font-size: 0.85rem;
-}
-
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-  color: #333;
-}
-
-.btn-back:hover {
-  background: #f0f0f0;
-  transform: translateX(-5px);
-}
-
-.btn-delete {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  color: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(255, 65, 108, 0.3);
-}
-
-.btn-delete:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 65, 108, 0.4);
-}
-
-.btn-delete:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.detail-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.image-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.main-image {
-  width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.info-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.header h1 {
-  font-size: 2rem;
-  color: #333;
-  line-height: 1.3;
-}
-
-.price-section {
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-  border-radius: 12px;
-}
-
-.current-price {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.label {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.amount {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.stats {
-  display: flex;
-  gap: 2rem;
-}
-
-.stat-item {
-  color: #666;
-  font-size: 0.95rem;
-}
-
-.timer-section {
-  padding: 1.5rem;
-  background: #fff3cd;
-  border-radius: 12px;
-  border: 2px solid #ffc107;
-}
-
-.timer-label {
-  font-weight: 600;
-  color: #856404;
-  margin-bottom: 1rem;
-}
-
-.countdown {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-}
-
-.time-unit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.time-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #856404;
-}
-
-.time-label {
-  font-size: 0.75rem;
-  color: #856404;
-  text-transform: uppercase;
-}
-
-.separator {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #856404;
-}
-
-.bid-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.bid-section label {
-  font-weight: 600;
-  color: #555;
-}
-
-.bid-input-group {
-  display: flex;
-  gap: 1rem;
-}
-
-.bid-input-group input {
-  flex: 1;
-}
-
-.btn-bid {
-  white-space: nowrap;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.quick-bids {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btn-quick {
-  flex: 1;
-  padding: 0.5rem;
-  background: white;
-  border: 2px solid #667eea;
-  color: #667eea;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-quick:hover {
-  background: #667eea;
-  color: white;
-}
-
-.description-section h3,
-.seller-section h3 {
-  color: #333;
-  margin-bottom: 0.75rem;
-}
-
-.description-section p {
-  color: #666;
-  line-height: 1.8;
-}
-
-.seller-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9ff;
-  border-radius: 8px;
-}
-
-.seller-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.2rem;
-}
-
-.seller-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.seller-name {
-  font-weight: 600;
-  color: #333;
-}
-
-.seller-rating {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.bid-history {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.bid-history h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: #f8f9ff;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.history-item:hover {
-  background: #e3f2fd;
-}
-
-.bidder {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.bidder-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.bidder-name {
-  font-weight: 600;
-  color: #333;
-}
-
-.bid-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-}
-
-.bid-amount {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.bid-time {
-  font-size: 0.85rem;
-  color: #999;
-}
-
-.no-bids {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #999;
-  font-size: 1.1rem;
-}
-
-.no-bids p {
-  margin: 0;
-}
-
-.similar-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.similar-section h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.similar-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-
-.similar-item {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.similar-item:hover {
-  transform: translateY(-5px);
-}
-
-.similar-item img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.similar-item h4 {
-  margin: 0.75rem 0 0.25rem;
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.similar-price {
-  font-weight: 700;
-  color: #667eea;
-}
-
-/* Nouveaux styles */
-.badge-warning {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.badge-secondary {
-  background: #e0e0e0;
-  color: #666;
-}
-
-.timer-section.closed {
-  background: #f0f0f0;
-  border-color: #999;
-}
-
-.winner-info {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #efe;
-  border-radius: 8px;
-}
-
-.winner-info p {
-  margin: 0.5rem 0;
-  color: #333;
-  font-weight: 500;
-}
-
-.bid-section.disabled {
-  padding: 1.5rem;
-  background: #f5f5f5;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.warning-message {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fff3cd;
-  border-radius: 8px;
-  color: #856404;
-  font-size: 0.9rem;
-}
-
-.warning-message a {
-  color: #667eea;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.info-message {
-  font-size: 1.1rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.btn-bid:disabled,
-.bid-input-group input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.product-details,
-.auction-info-section {
-  margin-top: 1rem;
-}
-
-.product-details h4,
-.auction-info-section h3 {
-  font-size: 1.1rem;
-  color: #333;
-  margin-bottom: 0.75rem;
-}
-
-.product-details ul,
-.auction-info-section ul {
-  list-style: none;
-  padding: 0;
-}
-
-.product-details li,
-.auction-info-section li {
-  padding: 0.5rem 0;
-  color: #666;
-  border-bottom: 1px solid #eee;
-}
-
-.product-details li:last-child,
-.auction-info-section li:last-child {
-  border-bottom: none;
-}
-
-/* Analytics Section */
-.analytics-section {
-  margin-bottom: 2rem;
-}
-
-.analytics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.analytics-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.analytics-card h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.live-indicator {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  background: #ff4444;
-  color: white;
-  border-radius: 20px;
-  animation: pulse-live 2s infinite;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-@keyframes pulse-live {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(0.98);
-  }
-}
-
-/* Graphique de prix */
-.chart-container {
-  width: 100%;
-}
-
-.price-chart {
-  position: relative;
-}
-
-.chart-area {
-  position: relative;
-  height: 200px;
-  margin-bottom: 1.5rem;
-}
-
-.chart-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.grid-line {
-  stroke: #f0f0f0;
-  stroke-width: 1;
-}
-
-.price-line {
-  stroke: #667eea;
-  stroke-width: 3;
-  fill: none;
-  filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
-  transition: all 0.5s ease;
-}
-
-.price-point {
-  fill: #667eea;
-  stroke: white;
-  stroke-width: 2;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  animation: pointPop 0.5s ease-out;
-}
-
-@keyframes pointPop {
-  0% {
-    r: 0;
-    opacity: 0;
-  }
-  50% {
-    r: 8;
-  }
-  100% {
-    r: 4;
-    opacity: 1;
-  }
-}
-
-.price-point:hover {
-  fill: #764ba2;
-  filter: drop-shadow(0 2px 6px rgba(118, 75, 162, 0.5));
-}
-
-.price-point:last-child {
-  fill: #ffd700;
-  stroke: #ff8c00;
-  stroke-width: 3;
-  animation: pulse-point 2s infinite;
-}
-
-@keyframes pulse-point {
-  0%,
-  100% {
-    r: 4;
-  }
-  50% {
-    r: 6;
-  }
-}
-
-.chart-labels {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 0 0.5rem;
-}
-
-.label-y {
-  font-size: 0.75rem;
-  color: #999;
-  font-weight: 500;
-}
-
-.chart-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 1rem;
-  background: #f8f9ff;
-  border-radius: 12px;
-  gap: 1rem;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-label {
-  display: block;
-  font-size: 0.8rem;
-  color: #999;
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #333;
-}
-
-.stat-value.success {
-  color: #28a745;
-}
-
-/* Leaderboard */
-.leaderboard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.leaderboard-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9ff;
-  border-radius: 12px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
-  animation: slideInLeft 0.5s ease-out;
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.leaderboard-item:hover {
-  background: #e3f2fd;
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.leaderboard-item.top-1 {
-  background: linear-gradient(135deg, #ffd70020 0%, #ffed4e20 100%);
-  border-color: #ffd700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-}
-
-.leaderboard-item.top-2 {
-  background: linear-gradient(135deg, #c0c0c020 0%, #e0e0e020 100%);
-  border-color: #c0c0c0;
-}
-
-.leaderboard-item.top-3 {
-  background: linear-gradient(135deg, #cd7f3220 0%, #ffb85020 100%);
-  border-color: #cd7f32;
-}
-
-.rank {
-  min-width: 40px;
-  text-align: center;
-}
-
-.medal {
-  font-size: 1.5rem;
-}
-
-.rank-number {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #999;
-}
-
-.leader-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.2rem;
-}
-
-.leader-info {
-  flex: 1;
-}
-
-.leader-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #333;
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.winning-badge {
-  padding: 0.25rem 0.6rem;
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-  color: #856404;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  animation: pulse-winning 2s infinite;
-}
-
-@keyframes pulse-winning {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 6px rgba(255, 215, 0, 0);
-  }
-}
-
-.leader-stats {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.separator {
-  color: #ccc;
-}
-
-.leader-badge {
-  text-align: right;
-}
-
-.highest-bid {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.badge-label {
-  font-size: 0.75rem;
-  color: #999;
-}
-
-.no-data {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #999;
-}
-
-/* Timeline des enchères */
-.bid-history-detailed {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.bid-history-detailed h2 {
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-.bid-timeline {
-  position: relative;
-}
-
-.timeline-item {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.timeline-marker {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.marker-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #667eea;
-  border: 3px solid white;
-  box-shadow: 0 0 0 2px #667eea;
-  z-index: 2;
-}
-
-.timeline-item:first-child .marker-dot {
-  background: #ffd700;
-  box-shadow: 0 0 0 2px #ffd700, 0 0 12px rgba(255, 215, 0, 0.5);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-.marker-line {
-  width: 2px;
-  flex: 1;
-  background: linear-gradient(to bottom, #667eea, #e0e0e0);
-  margin-top: 0.5rem;
-}
-
-.timeline-content {
-  flex: 1;
-  background: #f8f9ff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  border-left: 3px solid #667eea;
-  transition: all 0.3s ease;
-}
-
-.timeline-item:first-child .timeline-content {
-  border-left-color: #ffd700;
-  background: linear-gradient(135deg, #ffd70010 0%, #ffed4e10 100%);
-}
-
-.timeline-content:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #333;
-}
-
-.bid-badge {
-  padding: 0.25rem 0.75rem;
-  background: #ffd700;
-  color: #856404;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.time-info {
-  font-size: 0.85rem;
-  color: #999;
-}
-
-.timeline-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.bid-amount-large {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.bid-meta {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.no-bids-timeline {
-  padding: 3rem 0;
-}
-
-.empty-state {
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  color: #999;
-}
-
-/* Section statistiques */
-.stats-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.stats-section h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #667eea;
-  margin-bottom: 0.25rem;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-@media (max-width: 968px) {
-  .detail-content {
-    grid-template-columns: 1fr;
-  }
-
-  .countdown {
-    gap: 0.5rem;
-  }
-
-  .time-value {
-    font-size: 1.5rem;
-  }
-
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .timeline-item {
-    gap: 1rem;
-  }
-
-  .bid-amount-large {
-    font-size: 1.4rem;
-  }
-}
-</style>
+<style scoped src="./css/AuctionView.css"></style>

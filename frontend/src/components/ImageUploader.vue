@@ -8,7 +8,7 @@
           :class="{ active: uploadMode === 'file' }"
           @click="uploadMode = 'file'"
         >
-          📁 Uploader depuis le disque
+          Uploader depuis le disque
         </button>
         <button
           type="button"
@@ -16,7 +16,7 @@
           :class="{ active: uploadMode === 'url' }"
           @click="uploadMode = 'url'"
         >
-          🔗 Depuis une URL
+          Depuis une URL
         </button>
       </div>
 
@@ -42,7 +42,9 @@
             <span class="upload-icon">📤</span>
             <p><strong>Cliquez pour sélectionner des images</strong></p>
             <p class="hint">ou glissez-déposez vos fichiers ici</p>
-            <p class="hint-small">PNG, JPG, JPEG, GIF (max {{ maxSizeMB }}MB par image)</p>
+            <p class="hint-small">
+              PNG, JPG, JPEG, GIF (max {{ maxSizeMB }}MB par image)
+            </p>
           </div>
         </div>
 
@@ -60,9 +62,13 @@
                 type="button"
                 class="btn-icon btn-main"
                 @click="setMainImage(index)"
-                :title="index === mainImageIndex ? 'Image principale' : 'Définir comme principale'"
+                :title="
+                  index === mainImageIndex
+                    ? 'Image principale'
+                    : 'Définir comme principale'
+                "
               >
-                {{ index === mainImageIndex ? '⭐' : '☆' }}
+                {{ index === mainImageIndex ? "⭐" : "☆" }}
               </button>
               <button
                 type="button"
@@ -100,7 +106,12 @@
         </div>
 
         <div v-if="imageUrl && !urlError" class="url-preview">
-          <img :src="imageUrl" alt="Aperçu" @error="urlError = true" @load="urlError = false" />
+          <img
+            :src="imageUrl"
+            alt="Aperçu"
+            @error="urlError = true"
+            @load="urlError = false"
+          />
         </div>
 
         <p v-if="urlError" class="error-message">
@@ -112,137 +123,150 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch } from "vue";
 
 const props = defineProps({
   modelValue: {
     type: [String, Array],
-    default: ''
+    default: "",
   },
   maxImages: {
     type: Number,
-    default: 5
+    default: 5,
   },
   maxSizeMB: {
     type: Number,
-    default: 5
+    default: 5,
   },
   returnType: {
     type: String,
-    default: 'url', // 'url' ou 'files'
-    validator: (value) => ['url', 'files'].includes(value)
-  }
-})
+    default: "url", // 'url' ou 'files'
+    validator: (value) => ["url", "files"].includes(value),
+  },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 
-const uploadMode = ref('file')
-const fileInput = ref(null)
-const uploadedImages = ref([])
-const mainImageIndex = ref(0)
-const isDragging = ref(false)
-const imageUrl = ref('')
-const urlError = ref(false)
+const uploadMode = ref("file");
+const fileInput = ref(null);
+const uploadedImages = ref([]);
+const mainImageIndex = ref(0);
+const isDragging = ref(false);
+const imageUrl = ref("");
+const urlError = ref(false);
 
 // Surveiller les changements du mode
 watch(uploadMode, (newMode) => {
-  if (newMode === 'url' && imageUrl.value) {
-    emit('update:modelValue', imageUrl.value)
-  } else if (newMode === 'file' && uploadedImages.value.length > 0) {
-    if (props.returnType === 'files') {
-      emit('update:modelValue', uploadedImages.value)
+  if (newMode === "url" && imageUrl.value) {
+    emit("update:modelValue", imageUrl.value);
+  } else if (newMode === "file" && uploadedImages.value.length > 0) {
+    if (props.returnType === "files") {
+      emit("update:modelValue", uploadedImages.value);
     } else {
-      emit('update:modelValue', uploadedImages.value[mainImageIndex.value]?.preview || '')
+      emit(
+        "update:modelValue",
+        uploadedImages.value[mainImageIndex.value]?.preview || ""
+      );
     }
   } else {
-    emit('update:modelValue', '')
+    emit("update:modelValue", "");
   }
-})
+});
 
 // Surveiller l'URL
 watch(imageUrl, (newUrl) => {
-  if (uploadMode.value === 'url' && newUrl && !urlError.value) {
-    emit('update:modelValue', newUrl)
+  if (uploadMode.value === "url" && newUrl && !urlError.value) {
+    emit("update:modelValue", newUrl);
   }
-})
+});
 
 // Surveiller les images uploadées
-watch([uploadedImages, mainImageIndex], () => {
-  if (uploadMode.value === 'file' && uploadedImages.value.length > 0) {
-    if (props.returnType === 'files') {
-      emit('update:modelValue', uploadedImages.value)
-    } else {
-      emit('update:modelValue', uploadedImages.value[mainImageIndex.value]?.preview || '')
+watch(
+  [uploadedImages, mainImageIndex],
+  () => {
+    if (uploadMode.value === "file" && uploadedImages.value.length > 0) {
+      if (props.returnType === "files") {
+        emit("update:modelValue", uploadedImages.value);
+      } else {
+        emit(
+          "update:modelValue",
+          uploadedImages.value[mainImageIndex.value]?.preview || ""
+        );
+      }
     }
-  }
-}, { deep: true })
+  },
+  { deep: true }
+);
 
 const triggerFileInput = () => {
-  fileInput.value?.click()
-}
+  fileInput.value?.click();
+};
 
 const handleFileSelect = (event) => {
-  const files = Array.from(event.target.files)
-  processFiles(files)
-}
+  const files = Array.from(event.target.files);
+  processFiles(files);
+};
 
 const handleDrop = (event) => {
-  isDragging.value = false
-  const files = Array.from(event.dataTransfer.files)
-  processFiles(files)
-}
+  isDragging.value = false;
+  const files = Array.from(event.dataTransfer.files);
+  processFiles(files);
+};
 
 const processFiles = (files) => {
-  const imageFiles = files.filter(file => file.type.startsWith('image/'))
+  const imageFiles = files.filter((file) => file.type.startsWith("image/"));
 
-  if (props.maxImages && uploadedImages.value.length + imageFiles.length > props.maxImages) {
-    alert(`Vous ne pouvez ajouter que ${props.maxImages} images maximum`)
-    return
+  if (
+    props.maxImages &&
+    uploadedImages.value.length + imageFiles.length > props.maxImages
+  ) {
+    alert(`Vous ne pouvez ajouter que ${props.maxImages} images maximum`);
+    return;
   }
 
-  imageFiles.forEach(file => {
+  imageFiles.forEach((file) => {
     // Vérifier la taille
     if (file.size > props.maxSizeMB * 1024 * 1024) {
-      alert(`${file.name} est trop volumineux (max ${props.maxSizeMB}MB)`)
-      return
+      alert(`${file.name} est trop volumineux (max ${props.maxSizeMB}MB)`);
+      return;
     }
 
     // Créer une prévisualisation
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
       uploadedImages.value.push({
         file: file,
         preview: e.target.result,
         name: file.name,
-        size: file.size
-      })
-    }
-    reader.readAsDataURL(file)
-  })
-}
+        size: file.size,
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 const removeImage = (index) => {
-  uploadedImages.value.splice(index, 1)
-  
+  uploadedImages.value.splice(index, 1);
+
   // Ajuster l'index de l'image principale si nécessaire
   if (mainImageIndex.value >= uploadedImages.value.length) {
-    mainImageIndex.value = Math.max(0, uploadedImages.value.length - 1)
+    mainImageIndex.value = Math.max(0, uploadedImages.value.length - 1);
   }
 
   if (uploadedImages.value.length === 0) {
-    emit('update:modelValue', '')
+    emit("update:modelValue", "");
   }
-}
+};
 
 const setMainImage = (index) => {
-  mainImageIndex.value = index
-}
+  mainImageIndex.value = index;
+};
 
 const validateUrl = () => {
   if (imageUrl.value) {
-    urlError.value = false
+    urlError.value = false;
   }
-}
+};
 </script>
 
 <style scoped>

@@ -1,14 +1,23 @@
-# AuctionNet 🎯
+# App title : AuctionNet
 
 Plateforme d'enchères en ligne en temps réel avec Vue.js et Flask.
 
-## 📋 Prérequis
+## Fonctionnalités
+
+- Authentification JWT
+- Enchères en temps réel (WebSocket)
+- Upload d'images (URL ou fichier local)
+- Gestion de profil utilisateur
+- Filtres et recherche
+- Notifications temps réel
+
+## Prérequis
 
 - **Node.js** 20+ et npm
 - **Python** 3.11+
 - **Docker** (optionnel, pour déploiement)
 
-## 🚀 Installation
+## Installation
 
 ### Backend (Flask)
 
@@ -22,13 +31,14 @@ python -m venv venv
 # Windows:
 venv\Scripts\activate
 # Linux/Mac:
-source venv/bin/activate
+source .venv/bin/activate
 
 # Installer les dépendances
 pip install -r requirements.txt
 
 # Lancer le serveur (dev)
 python app.py
+python3 app.py #(sur Mac)
 ```
 
 Le backend sera accessible sur `http://localhost:5000`
@@ -47,7 +57,7 @@ npm run dev
 
 Le frontend sera accessible sur `http://localhost:5173`
 
-## 🐳 Docker (Production)
+## Docker (Production)
 
 ### Avec Docker Compose
 
@@ -62,6 +72,7 @@ docker-compose up -d --build
 ### Images individuelles
 
 **Backend:**
+
 ```bash
 cd backend
 docker build -t auctionnet-backend .
@@ -69,13 +80,14 @@ docker run -p 5000:5000 auctionnet-backend
 ```
 
 **Frontend:**
+
 ```bash
 cd frontend
 docker build -t auctionnet-frontend .
 docker run -p 80:80 auctionnet-frontend
 ```
 
-## 📁 Structure du projet
+## Structure du projet
 
 ```
 AuctionNet-Prod/
@@ -94,9 +106,10 @@ AuctionNet-Prod/
 └── docker-compose.yml   # Orchestration Docker
 ```
 
-## 🔑 Variables d'environnement
+## Variables d'environnement
 
 ### Backend (.env)
+
 ```env
 JWT_SECRET_KEY=votre-secret-key
 DB_DIR=./local_data/db
@@ -104,22 +117,17 @@ MEDIA_DIR=./local_data/media
 ```
 
 ### Frontend (.env)
+
 ```env
 VITE_API_BASE_URL=http://localhost:5000
 ```
 
-## ✨ Fonctionnalités
 
-- ✅ Authentification JWT
-- ✅ Enchères en temps réel (WebSocket)
-- ✅ Upload d'images (URL ou fichier local)
-- ✅ Gestion de profil utilisateur
-- ✅ Filtres et recherche
-- ✅ Notifications temps réel
 
-## 🛠️ Commandes utiles
+## Commandes utiles
 
 **Frontend:**
+
 ```bash
 npm run build        # Build production
 npm run preview      # Preview du build
@@ -127,17 +135,19 @@ npm run lint         # Linter ESLint
 ```
 
 **Backend:**
+
 ```bash
 pytest              # Tests unitaires
 python -m pip freeze > requirements.txt  # Mise à jour dépendances
 ```
 
-## 🌐 Déploiement Railway
+## Déploiement Railway
 
 Le projet est configuré pour Railway avec:
+
 - Nginx pour le frontend (SPA routing)
 - WebSocket supporté
 
-## 📝 License
+## License
 
 MIT

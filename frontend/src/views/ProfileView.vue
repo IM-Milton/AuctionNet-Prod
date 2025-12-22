@@ -20,7 +20,7 @@
         </div>
 
         <div class="balance-card">
-          <span class="balance-label">💰 Solde du compte</span>
+          <span class="balance-label">Solde du compte</span>
           <span class="balance-amount"
             >{{ currentUser.balance.toFixed(2) }} €</span
           >
@@ -321,9 +321,9 @@ const activeTab = ref("participations");
 const loading = ref(true);
 
 const tabs = [
-  { id: "participations", icon: "🎯", label: "Participations" },
-  { id: "myAuctions", icon: "💰", label: "Mes enchères" },
-  { id: "won", icon: "🏆", label: "Gagnées" },
+  { id: "participations", label: "Participations" },
+  { id: "myAuctions", label: "Mes enchères" },
+  { id: "won", label: "Gagnées" },
 ];
 
 // Données utilisateur depuis le backend
@@ -458,14 +458,18 @@ onUnmounted(() => {
 function mapAuction(auction) {
   const product = auction.product || {};
   const images = product.images || [];
-  
+
   // Gérer différents types d'images : URLs absolues, chemins media, Data URLs
   let imageUrl = "/assets/images/placeholder.jpg";
-  
+
   if (images.length > 0 && images[0]) {
     const img = images[0];
     // Si c'est une Data URL (base64) ou une URL complète, l'utiliser directement
-    if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
+    if (
+      img.startsWith("data:") ||
+      img.startsWith("http://") ||
+      img.startsWith("https://")
+    ) {
       imageUrl = img;
     } else {
       // Sinon, c'est un chemin media à transformer
@@ -504,18 +508,18 @@ function getTabCount(tabId) {
 
 function getAuctionStatus(auction) {
   if (auction.status === "won" || auction.winner) {
-    return { text: "🏆 Remportée", class: "won" };
+    return { text: "Remportée", class: "won" };
   }
 
   if (auction.status === "closed" || auction.status === "completed") {
-    return { text: "⏱️ Terminée", class: "ended" };
+    return { text: "Terminée", class: "ended" };
   }
 
   if (auction.status === "running" || auction.status === "active") {
-    return { text: "🔥 En cours", class: "active" };
+    return { text: "En cours", class: "active" };
   }
 
-  return { text: "� Planifiée", class: "scheduled" };
+  return { text: "Planifiée", class: "scheduled" };
 }
 
 function getCategoryLabel(category) {
@@ -545,525 +549,4 @@ function formatDate(dateString) {
 }
 </script>
 
-<style scoped>
-.profile-page {
-  min-height: 100vh;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.loading {
-  text-align: center;
-  padding: 4rem;
-  color: white;
-  font-size: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.avatar {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  color: white;
-}
-
-.page-header h1 {
-  margin: 0 0 0.25rem 0;
-  color: #333;
-  font-size: 2rem;
-}
-
-.username {
-  margin: 0;
-  color: #666;
-  font-size: 1.1rem;
-}
-
-.balance-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  border-radius: 12px;
-  color: white;
-}
-
-.balance-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.balance-amount {
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.btn-credit {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: white;
-  color: #43e97b;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-}
-
-.btn-credit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  background: white;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: transparent;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.tab:hover {
-  background: #f5f5f5;
-}
-
-.tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-color: transparent;
-}
-
-.tab-count {
-  padding: 0.25rem 0.75rem;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  font-size: 0.85rem;
-}
-
-.tab.active .tab-count {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.tab-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-height: 400px;
-}
-
-.auctions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.empty-icon {
-  font-size: 5rem;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.auction-card {
-  display: grid;
-  grid-template-columns: 200px 1fr auto;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.auction-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.auction-image {
-  position: relative;
-  width: 200px;
-  height: 150px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.auction-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.auction-status {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  backdrop-filter: blur(10px);
-}
-
-.auction-status.active {
-  background: rgba(67, 233, 123, 0.95);
-  color: white;
-}
-
-.auction-status.ended {
-  background: rgba(158, 158, 158, 0.95);
-  color: white;
-}
-
-.auction-status.won {
-  background: rgba(255, 193, 7, 0.95);
-  color: #333;
-}
-
-.auction-details h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.3rem;
-}
-
-.auction-category {
-  color: #667eea;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-}
-
-.auction-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-}
-
-.info-item .label {
-  color: #666;
-  font-size: 0.95rem;
-}
-
-.info-item .value {
-  font-weight: 600;
-  color: #333;
-}
-
-.info-item .value.highlight {
-  color: #667eea;
-  font-size: 1.1rem;
-}
-
-.info-item .value.winner {
-  color: #f59e0b;
-}
-
-.winner-info {
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  background: #fff3cd;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.auction-actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-outline {
-  background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
-}
-
-.btn-outline:hover {
-  background: #667eea;
-  color: white;
-}
-
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.modal-content h2 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.8rem;
-}
-
-.modal-description {
-  color: #666;
-  margin: 0 0 1.5rem 0;
-  font-size: 0.95rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 600;
-}
-
-.input-field {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.input-hint {
-  margin: 0.5rem 0 0 0;
-  color: #999;
-  font-size: 0.85rem;
-}
-
-.error-message {
-  padding: 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  color: #c33;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.success-message {
-  padding: 1rem;
-  background: #efe;
-  border: 1px solid #cfc;
-  border-radius: 8px;
-  color: #3a3;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-
-.btn-secondary {
-  background: #e0e0e0;
-  color: #666;
-}
-
-.btn-secondary:hover {
-  background: #d0d0d0;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .profile-page {
-    padding: 1rem;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .balance-card {
-    width: 100%;
-    align-items: center;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tabs {
-    flex-direction: column;
-  }
-
-  .auction-card {
-    grid-template-columns: 1fr;
-  }
-
-  .auction-image {
-    width: 100%;
-    height: 200px;
-  }
-
-  .auction-actions {
-    flex-direction: row;
-  }
-}
-</style>
+<style scoped src="./css/ProfileView.css"></style>

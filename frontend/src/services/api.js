@@ -1,154 +1,152 @@
 // Service API pour communiquer avec le backend
 
-const isProd = import.meta.env.PROD
+const isProd = import.meta.env.PROD;
 
-// ⚠️ Remplace ICI par l'URL publique de TON backend Railway
-const PROD_API_BASE_URL = 'https://auctionnet-backend.up.railway.app/api'
+const PROD_API_BASE_URL = "https://auctionnet-backend.up.railway.app/api";
 
 // En dev → localhost, en prod → backend Railway
 const API_BASE_URL = isProd
-  ? PROD_API_BASE_URL          // prod : backend Railway
-  : 'http://localhost:5000/api' // dev local
+  ? PROD_API_BASE_URL // prod : backend Railway
+  : "http://localhost:5000/api"; // dev local
 
-console.log('API_BASE_URL =', API_BASE_URL)
-
+console.log("API_BASE_URL =", API_BASE_URL);
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL
+    this.baseURL = API_BASE_URL;
   }
 
   // Récupérer le token JWT du localStorage
   getToken() {
-    return localStorage.getItem('authToken')
+    return localStorage.getItem("authToken");
   }
 
   // Sauvegarder le token JWT
   setToken(token) {
-    localStorage.setItem('authToken', token)
+    localStorage.setItem("authToken", token);
   }
 
   // Supprimer le token JWT
   removeToken() {
-    localStorage.removeItem('authToken')
+    localStorage.removeItem("authToken");
   }
 
   // Méthode générique pour faire des requêtes
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
-    const token = this.getToken()
+    const url = `${this.baseURL}${endpoint}`;
+    const token = this.getToken();
 
     const config = {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
-    }
+    };
 
     try {
-      const response = await fetch(url, config)
-      
+      const response = await fetch(url, config);
+
       // Gérer les erreurs HTTP
       if (!response.ok) {
-        let errorMessage = 'Une erreur est survenue'
-        
+        let errorMessage = "Une erreur est survenue";
+
         try {
-          const data = await response.json()
-          errorMessage = data.error || data.message || data.msg || errorMessage
+          const data = await response.json();
+          errorMessage = data.error || data.message || data.msg || errorMessage;
         } catch (e) {
           // Si pas de JSON, utiliser le status text
-          errorMessage = response.statusText || errorMessage
+          errorMessage = response.statusText || errorMessage;
         }
-        
+
         // Ajouter le code HTTP dans le message pour le débogage
-        const error = new Error(errorMessage)
-        error.status = response.status
-        throw error
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        throw error;
       }
 
-      const data = await response.json()
-      return data
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.error('API Error:', error)
-      throw error
+      console.error("API Error:", error);
+      throw error;
     }
   }
 
   // --- Auth endpoints ---
   async register(userData) {
-    const response = await this.request('/auth/register', {
-      method: 'POST',
+    const response = await this.request("/auth/register", {
+      method: "POST",
       body: JSON.stringify(userData),
-    })
-    return response
+    });
+    return response;
   }
 
   async login(credentials) {
-    const response = await this.request('/auth/login', {
-      method: 'POST',
+    const response = await this.request("/auth/login", {
+      method: "POST",
       body: JSON.stringify(credentials),
-    })
-    
+    });
+
     if (response.access_token) {
-      this.setToken(response.access_token)
+      this.setToken(response.access_token);
     }
-    
-    return response
+
+    return response;
   }
 
   async getCurrentUser() {
-    return await this.request('/me')
+    return await this.request("/me");
   }
 
   logout() {
-    this.removeToken()
-    localStorage.removeItem('currentUser')
+    this.removeToken();
+    localStorage.removeItem("currentUser");
   }
 
   // --- Auctions endpoints ---
   async getAuctions(filters = {}) {
-    const params = new URLSearchParams(filters)
-    return await this.request(`/auctions?${params}`)
+    const params = new URLSearchParams(filters);
+    return await this.request(`/auctions?${params}`);
   }
 
   async getAuction(id) {
-    return await this.request(`/auctions/${id}`)
+    return await this.request(`/auctions/${id}`);
   }
 
   async createAuction(auctionData) {
-    return await this.request('/auctions', {
-      method: 'POST',
+    return await this.request("/auctions", {
+      method: "POST",
       body: JSON.stringify(auctionData),
-    })
+    });
   }
 
   async placeBid(auctionId, amount) {
     return await this.request(`/auctions/${auctionId}/bids`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ amount }),
-    })
+    });
   }
 
   async deleteAuction(auctionId) {
     return await this.request(`/auctions/${auctionId}`, {
-      method: 'DELETE',
-    })
+      method: "DELETE",
+    });
   }
 
   // --- Products endpoints ---
   async createProduct(productData) {
-    return await this.request('/products', {
-      method: 'POST',
+    return await this.request("/products", {
+      method: "POST",
       body: JSON.stringify(productData),
-    })
+    });
   }
 
   // --- Categories endpoints ---
   async getCategories() {
-    return await this.request('/categories')
+    return await this.request("/categories");
   }
 }
 
-export default new ApiService()
+export default new ApiService();
