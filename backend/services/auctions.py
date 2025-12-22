@@ -236,6 +236,10 @@ def close_auction_if_due(repo, auction_id: str):
             buyer["held"] = float(buyer.get("held", 0.0)) - float(win["amount"])
             buyer["balance"] = float(buyer.get("balance", 0.0)) - float(win["amount"])
             buyer.setdefault("purchases", []).append(a["product_id"])
+            # Ajouter le montant au compte du vendeur
+            product = next(p for p in products_doc.get("products", []) if p["id"] == a["product_id"])
+            seller = next(u for u in users_doc.get("users", []) if u["id"] == product["owner_id"])
+            seller["balance"] = float(seller.get("balance", 0.0)) + float(win["amount"])
             # Ajouter le winner_id à l'enchère
             a["winner_id"] = win["user_id"]
         # Save
