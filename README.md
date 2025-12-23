@@ -40,27 +40,27 @@ Real-time online auction platform built with Vue.js and Flask.
 
 ### Prerequisites
 
-### Prerequisites
-
 - **Node.js** 20+ and npm
 - **Python** 3.11+
 - **Docker** (optional, for deployment)
 
-### Backend Setup (Flask)
-     ou
-- **Docker**
-
 ## Installation
 
-## 1. Via docker
+### Option 1: Using Docker
 
-AuctionNet-Prod/
-docker compose build (Pour construire les images)
-docker compose up -d (Pour lancer les containers)
-Accessible sur : http://localhost:5173/
+```bash
+# Build the images
+docker compose build
 
-## 2. Sans Docker
-### Backend (Flask)
+# Start the containers
+docker compose up -d
+```
+
+Accessible at: http://localhost:5173/
+
+### Option 2: Without Docker
+
+#### Backend Setup (Flask)
 
 ```bash
 cd backend
@@ -85,9 +85,7 @@ python3 app.py
 
 The backend will be available at `http://localhost:5000`
 
-### Frontend Setup (Vue.js)
-
-### Frontend Setup (Vue.js)
+#### Frontend Setup (Vue.js)
 
 ```bash
 cd frontend
@@ -141,7 +139,7 @@ docker run -p 80:80 auctionnet-frontend
 - Search by keywords in auction titles
 
 ### 3. Create an Auction
-- Click on "Vendre" (Sell) button
+- Click on the "Sell" button
 - Fill in product details (title, description, category)
 - Upload an image (URL or local file)
 - Set starting price and auction duration
@@ -212,8 +210,6 @@ VITE_API_BASE_URL=http://localhost:5000
 ```http
 POST /api/register
 Content-Type: application/json
-## Commandes utiles
-
 {
   "email": "user@example.com",
   "password": "securepassword"
@@ -359,15 +355,12 @@ MIT License - Feel free to use this project for educational purposes.
 ---
 
 **Polytech Paris Saclay - Web & Mobile Dev 2 - 2025/2026**
-## Déploiement en ligne: 
 
-On utilise Railway pour le déploiment qui permet d'heberger notre site web pour 1 mois gratuitement.
+## Online Deployment
 
-Configuration de Railway : 
-- Connexion à notre branch main
-- Création de deux services (1 par container)
-- Railway détecte et lance le dockerfile
+We use Railway for deployment which allows hosting our website for 1 month for free.
 
-## License
-
-MIT
+**Railway Configuration:**
+- Connected to our main branch
+- Created two services (1 per container)
+- Railway automatically detects and runs the Dockerfile
