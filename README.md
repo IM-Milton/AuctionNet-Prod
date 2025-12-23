@@ -47,6 +47,20 @@ Real-time online auction platform built with Vue.js and Flask.
 - **Docker** (optional, for deployment)
 
 ### Backend Setup (Flask)
+     ou
+- **Docker**
+
+## Installation
+
+## 1. Via docker
+
+AuctionNet-Prod/
+docker compose build (Pour construire les images)
+docker compose up -d (Pour lancer les containers)
+Accessible sur : http://localhost:5173/
+
+## 2. Sans Docker
+### Backend (Flask)
 
 ```bash
 cd backend
@@ -198,6 +212,7 @@ VITE_API_BASE_URL=http://localhost:5000
 ```http
 POST /api/register
 Content-Type: application/json
+## Commandes utiles
 
 {
   "email": "user@example.com",
@@ -344,6 +359,14 @@ MIT License - Feel free to use this project for educational purposes.
 ---
 
 **Polytech Paris Saclay - Web & Mobile Dev 2 - 2025/2026**
+## Déploiement en ligne: 
+
+On utilise Railway pour le déploiment qui permet d'heberger notre site web pour 1 mois gratuitement.
+
+Configuration de Railway : 
+- Connexion à notre branch main
+- Création de deux services (1 par container)
+- Railway détecte et lance le dockerfile
 
 ## License
 
