@@ -537,7 +537,7 @@ if __name__ == '__main__':
         app,
         host='0.0.0.0',
         port=port,
-        debug=False,                   # en prod -> False
-        allow_unsafe_werkzeug=True     # IMPORTANT pour Docker / Railway
+        debug=False,                   
+        allow_unsafe_werkzeug=True
     )
 

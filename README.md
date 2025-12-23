@@ -15,10 +15,19 @@ Plateforme d'enchères en ligne en temps réel avec Vue.js et Flask.
 
 - **Node.js** 20+ et npm
 - **Python** 3.11+
-- **Docker** (optionnel, pour déploiement)
+     ou
+- **Docker**
 
 ## Installation
 
+## 1. Via docker
+
+AuctionNet-Prod/
+docker compose build (Pour construire les images)
+docker compose up -d (Pour lancer les containers)
+Accessible sur : http://localhost:5173/
+
+## 2. Sans Docker
 ### Backend (Flask)
 
 ```bash
@@ -57,35 +66,6 @@ npm run dev
 
 Le frontend sera accessible sur `http://localhost:5173`
 
-## Docker (Production)
-
-### Avec Docker Compose
-
-```bash
-# Lancer tous les services
-docker-compose up --build
-
-# En arrière-plan
-docker-compose up -d --build
-```
-
-### Images individuelles
-
-**Backend:**
-
-```bash
-cd backend
-docker build -t auctionnet-backend .
-docker run -p 5000:5000 auctionnet-backend
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-docker build -t auctionnet-frontend .
-docker run -p 80:80 auctionnet-frontend
-```
 
 ## Structure du projet
 
@@ -122,8 +102,6 @@ MEDIA_DIR=./local_data/media
 VITE_API_BASE_URL=http://localhost:5000
 ```
 
-
-
 ## Commandes utiles
 
 **Frontend:**
@@ -141,12 +119,14 @@ pytest              # Tests unitaires
 python -m pip freeze > requirements.txt  # Mise à jour dépendances
 ```
 
-## Déploiement Railway
+## Déploiement en ligne: 
 
-Le projet est configuré pour Railway avec:
+On utilise Railway pour le déploiment qui permet d'heberger notre site web pour 1 mois gratuitement.
 
-- Nginx pour le frontend (SPA routing)
-- WebSocket supporté
+Configuration de Railway : 
+- Connexion à notre branch main
+- Création de deux services (1 par container)
+- Railway détecte et lance le dockerfile
 
 ## License
 
